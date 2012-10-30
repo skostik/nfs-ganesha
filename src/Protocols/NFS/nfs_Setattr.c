@@ -237,18 +237,44 @@ int nfs_Setattr(nfs_arg_t * parg,
    */
   if(do_trunc)
     {
+      int root_superpower_wanted = FALSE ;
+      uid_t saved_uid = 0 ;
+
       /* Should not be done on a directory */
       if(pentry->internal_md.type == DIR_BEGINNING
          || pentry->internal_md.type == DIR_CONTINUE)
         cache_status = CACHE_INODE_IS_A_DIRECTORY;
       else
         {
+          /* What's next requires a bit of explanation:
+           * the cp command line from coreutils contains a few optimisations
+           * one of them is "if a file ends with blocks full of zeroes, then do 
+           * not write them and force the size by calling ftruncate
+           * if the file is a new file created in 04XY mode, it succeeds because the file descriptor
+           * passed to ftruncate has a oflag that contains O_CREAT.
+           * But NFSv3 has no "open", if a file is create 04XY and then ftruncated, then the server will 
+           * created the file in 04XY and then try to truncate it, leading to a EPERM.
+           * The following lines works around this */
+
+          if( ( pentry->internal_md.type == REGULAR_FILE )               && 
+              ( ( pentry->object.file.attributes.mode & 0700 ) == 0400 ) &&
+              ( pentry->object.file.attributes.owner ==  FSAL_OP_CONTEXT_TO_UID( pcontext ) ) )
+            {
+             root_superpower_wanted = TRUE ;
+            }
+
+          if( root_superpower_wanted == TRUE ) 
+            saved_uid = setfsuid( 0 ) ;
+
           cache_status = cache_inode_truncate(pentry,
                                               setattr.filesize,
                                               &parent_attr,
                                               ht, pclient, pcontext, &cache_status);
           setattr.asked_attributes &= ~FSAL_ATTR_SPACEUSED;
           setattr.asked_attributes &= ~FSAL_ATTR_SIZE;
+
+          if( root_superpower_wanted == TRUE ) 
+            setfsuid( saved_uid ) ;
         }
     }
   else
