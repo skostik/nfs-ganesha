@@ -2004,11 +2004,13 @@ void cache_inode_release_symlink(cache_entry_t * pentry,
                                  struct prealloc_pool *pool)
 {
     assert(pentry);
-    assert(pentry->internal_md.type == SYMBOLIC_LINK);
-    if (pentry->object.symlink) {
-        ReleaseToPool(pentry->object.symlink, pool);
-        pentry->object.symlink = NULL;
-    }
+    if(pentry->internal_md.type == SYMBOLIC_LINK)
+     {
+       if (pentry->object.symlink) {
+          ReleaseToPool(pentry->object.symlink, pool);
+          pentry->object.symlink = NULL;
+       }
+     }
 }
 
 #ifdef _USE_PROXY
