@@ -37,7 +37,6 @@
  */
 int hpss2fsal_error(int hpss_errorcode)
 {
-
   switch (hpss_errorcode)
     {
 
@@ -61,6 +60,7 @@ int hpss2fsal_error(int hpss_errorcode)
     case ECONNRESET:
 #endif
     case HPSS_ECONN:
+    case -HPSS_ECONN:
 
       /* IO error */
     case EIO:
@@ -146,10 +146,12 @@ int hpss2fsal_error(int hpss_errorcode)
 
     case EDQUOT:
     case HPSS_EDQUOT:
+    case -HPSS_EDQUOT:
       return ERR_FSAL_DQUOT;
 
     case ENAMETOOLONG:
     case HPSS_ENAMETOOLONG:
+    case -HPSS_ENAMETOOLONG:
       return ERR_FSAL_NAMETOOLONG;
 
 /**
@@ -165,10 +167,12 @@ int hpss2fsal_error(int hpss_errorcode)
     case -ENOTEMPTY:
 #endif
     case HPSS_ENOTEMPTY:
+    case -HPSS_ENOTEMPTY:
       return ERR_FSAL_NOTEMPTY;
 
     case ESTALE:
     case HPSS_ESTALE:
+    case -HPSS_ESTALE:
       return ERR_FSAL_STALE;
 
       /* Error code that needs a retry */
