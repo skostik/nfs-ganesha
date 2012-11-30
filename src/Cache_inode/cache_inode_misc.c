@@ -948,6 +948,9 @@ cache_inode_status_t cache_inode_error_convert(fsal_status_t fsal_status)
     case ERR_FSAL_XDEV:
         return CACHE_INODE_FSAL_XDEV ;
 
+    case ERR_FSAL_MLINK:
+        return CACHE_INODE_FSAL_MLINK ;
+
     case ERR_FSAL_DEADLOCK:
     case ERR_FSAL_BLOCKED:
     case ERR_FSAL_INTERRUPT:
@@ -956,7 +959,6 @@ cache_inode_status_t cache_inode_error_convert(fsal_status_t fsal_status)
     case ERR_FSAL_ALREADY_INIT:
     case ERR_FSAL_BAD_INIT:
     case ERR_FSAL_NO_QUOTA:
-    case ERR_FSAL_MLINK:
     case ERR_FSAL_TOOSMALL:
     case ERR_FSAL_TIMEOUT:
     case ERR_FSAL_SERVERFAULT:
