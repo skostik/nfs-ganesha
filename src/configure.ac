@@ -16,6 +16,7 @@ AC_REVISION([Compiles:  i386/x86_64. FSAL: POSIX/PROXY/HPSS/FUSELIKE/LUSTRE/XFS/
 # Init Automake
 #AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])]) 
 
 # check for _GNU_SOURCE and set it in config.h
 AC_GNU_SOURCE
