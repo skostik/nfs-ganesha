@@ -35,10 +35,10 @@ prog=vfs.ganesha.nfsd
 PID_FILE=${PID_FILE:=/var/run/${prog}.pid}
 LOCK_FILE=${LOCK_FILE:=/var/lock/subsys/${prog}}
 
+[ -f /etc/sysconfig/nfs-ganesha.vfs ] && . /etc/sysconfig/nfs-ganesha.vfs 
+
 OPTIONS="-d -L $LOGFILE -f $CONFFILE -N NIV_EVENT -p $PID_FILE "
 RETVAL=0
-
-[ -f /etc/sysconfig/nfs-ganesha.vfs ] && . /etc/sysconfig/nfs-ganesha.vfs 
 
 start() {
         echo -n $"Starting $prog: "
