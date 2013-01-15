@@ -287,4 +287,6 @@ int fsal_ds_handle_uninit(struct fsal_ds_handle *ds)
 
         return 0;
 }
+
 /** @} */
+

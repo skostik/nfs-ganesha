@@ -42,7 +42,10 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/syscall.h>
 #include <mntent.h>
+#include <unistd.h> /* glibc uses <sys/fsuid.h> */
+
 #include "abstract_mem.h"
 
 
@@ -57,3 +60,26 @@ uint32_t CredentialLifetime = 3600;
  * it is read-only, except during initialization.
  */
 struct fsal_staticfsinfo_t global_fs_info;
+
+void set_credentials( struct user_cred * creds )
+{
+ /* The following 3 calls set threads uid/gig/altgroups for the thread.
+ *  *   * Return statuses are not checked. This is done on purpose, if call fails
+ *   *     * then no "su" is done and later calls will get EPERM or EACCES */
+  setfsuid(creds->caller_uid);
+  setfsgid(creds->caller_gid);
+  syscall(__NR_setgroups,
+          creds->caller_glen,
+          creds->caller_garray) ;
+}
+
+void set_creds_to_root()
+{
+ /* The following 3 calls set threads uid/gig/altgroups for the thread.
+ *  *   * Return statuses are not checked. This is done on purpose, if call fails
+ *   *     * then no "su" is done and later calls will get EPERM or EACCES */
+  setfsuid( 0 ) ;
+  setfsgid( 0 ) ;
+  syscall( __NR_setgroups, 0, NULL ) ;
+}
+
