@@ -200,12 +200,12 @@ static fsal_status_t lookup(struct fsal_obj_handle *parent,
 	retval = vfs_fsal_name_to_handle(parent->export, dirfd, path, fh);
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 	retval = CRED_WRAP( opctx->creds, int, fstatat, dirfd, path, &stat, AT_SYMLINK_NOFOLLOW);
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 
 	/* allocate an obj_handle and fill it up */
@@ -219,7 +219,7 @@ static fsal_status_t lookup(struct fsal_obj_handle *parent,
 	*handle = &hdl->obj_handle;
 	return fsalstat(ERR_FSAL_NO_ERROR, 0);
 
-direrr:
+err:
 	close(dirfd);
 hdlerr:
 	fsal_error = posix2fsal_error(retval);
@@ -244,29 +244,21 @@ int get_stat_by_handle_at(int dir_fd,
 		   struct stat *stat)
 {
 	int retval;
-        struct stat stat;
-        vfs_file_handle_t *fh;
 
         vfs_alloc_handle(fh);
 	
 	retval = vfs_name_to_handle_at(dir_fd, name, fh);
 	if(retval < 0) {
-		goto fileerr;
+		goto err;
 	}
 	retval = fstatat( dir_fd, name, stat, AT_SYMLINK_NOFOLLOW);
 	if(retval < 0) {
-		goto fileerr;
+		goto err;
 	}
 
-	/* allocate an obj_handle and fill it up */
-	*hdl = alloc_handle(dir_fd, fh, &stat, dir_hdl->handle,
-                            name, dir_hdl->obj_handle.export);
-	if(*hdl == NULL) {
-	        return ENOMEM;
-	}
 	return 0;
 
-fileerr:
+err:
 	retval = errno;
 	return retval;
 }
@@ -308,7 +300,7 @@ static fsal_status_t create(struct fsal_obj_handle *dir_hdl,
 	retval = CRED_WRAP( opctx->creds, int, fstatat, dir_fd, "", &stat, AT_EMPTY_PATH);
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 	if(stat.st_mode & S_ISGID)
 		group = -1; /*setgid bit on dir propagates dir group owner */
@@ -319,12 +311,12 @@ static fsal_status_t create(struct fsal_obj_handle *dir_hdl,
 	fd = CRED_WRAP( opctx->creds, int, openat, dir_fd, name, O_CREAT|O_WRONLY|O_TRUNC|O_EXCL, unix_mode);
 	if(fd < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 
 	retval = get_stat_by_handle_at(dir_fd, name, fh, &stat);
 	if(retval != 0) {
-		goto fileerr;
+		goto err;
 	}
 	close(dir_fd); /* done with parent */
 
@@ -332,7 +324,7 @@ static fsal_status_t create(struct fsal_obj_handle *dir_hdl,
 	hdl = alloc_handle(fh, &stat, NULL, NULL, NULL, dir_hdl->export);
 	if(hdl == NULL) {
 		retval = ENOMEM;
-		goto fileerr;
+		goto err;
 	}
 	close(fd);  /* don't need it anymore. */
 	*handle = &hdl->obj_handle;
@@ -340,7 +332,7 @@ static fsal_status_t create(struct fsal_obj_handle *dir_hdl,
 
 	unlinkat(dir_fd, name, 0);  /* remove the evidence on errors */
 
-direrr:
+err:
 	fsal_error = posix2fsal_error(retval);
 	close(dir_fd);
 	return fsalstat(fsal_error, retval);	
@@ -380,7 +372,7 @@ static fsal_status_t makedir(struct fsal_obj_handle *dir_hdl,
 	retval = CRED_WRAP( opctx->creds, int, fstatat, dir_fd, "", &stat, AT_EMPTY_PATH);
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 	if(stat.st_mode & S_ISGID)
 		group = -1; /*setgid bit on dir propagates dir group owner */
@@ -389,12 +381,12 @@ static fsal_status_t makedir(struct fsal_obj_handle *dir_hdl,
 	retval = CRED_WRAP( opctx->creds, int, mkdirat, dir_fd, name, unix_mode );
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 	retval = get_stat_by_handle_at(dir_fd, name, fh, &stat);
 	if(retval != 0) {
 		retval = errno;
-		goto fileerr;
+		goto err;
 	}
 	close(dir_fd);
 
@@ -402,14 +394,14 @@ static fsal_status_t makedir(struct fsal_obj_handle *dir_hdl,
 	hdl = alloc_handle(fh, &stat, NULL, NULL, NULL, dir_hdl->export);
 	if(hdl == NULL) {
 		retval = ENOMEM;
-		goto fileerr;
+		goto err;
 	}
 	*handle = &hdl->obj_handle;
 	return fsalstat(ERR_FSAL_NO_ERROR, 0);
 	
 	unlinkat(dir_fd, name, AT_REMOVEDIR);  /* remove the evidence on errors */
 
-direrr:
+err:
 	fsal_error = posix2fsal_error(retval);
 	close(dir_fd);
 	return fsalstat(fsal_error, retval);	
@@ -484,7 +476,7 @@ static fsal_status_t makenode(struct fsal_obj_handle *dir_hdl,
 	retval = CRED_WRAP( opctx->creds, int, fstatat, dir_fd, "", &stat, AT_EMPTY_PATH);
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 	if(stat.st_mode & S_ISGID)
 		group = -1; /*setgid bit on dir propagates dir group owner */
@@ -493,18 +485,18 @@ static fsal_status_t makenode(struct fsal_obj_handle *dir_hdl,
 	retval = CRED_WRAP( opctx->creds, int, mknodat, dir_fd, name, unix_mode, unix_dev);
 	if(retval < 0) {
 		retval = errno;
-		goto direrr;
+		goto err;
 	}
 	retval = get_stat_by_handle_at(dir_fd, name, fh, &stat);
 	if(retval != 0) {
-		goto nodeerr;
+		goto err;
 	}
 
 	/* allocate an obj_handle and fill it up */
 	hdl = alloc_handle(fh, &stat, NULL, dir_fh, unopenable_name, dir_hdl->export);
 	if(hdl == NULL) {
 		retval = ENOMEM;
-		goto nodeerr;
+		goto err;
 	}
 	close(dir_fd); /* done with parent */
 	*handle = &hdl->obj_handle;
@@ -512,7 +504,7 @@ static fsal_status_t makenode(struct fsal_obj_handle *dir_hdl,
 	
 	unlinkat(dir_fd, name, 0);
 	
-direrr:
+err:
 	fsal_error = posix2fsal_error(retval);
 	close(dir_fd); /* done with parent */
 
@@ -559,7 +551,7 @@ static fsal_status_t makesymlink(struct fsal_obj_handle *dir_hdl,
 	}
 	retval = CRED_WRAP( opctx->creds, int, fstatat, dir_fd, "", &stat, AT_EMPTY_PATH);
 	if(retval < 0) {
-		goto direrr;
+		goto err;
 	}
 	if(stat.st_mode & S_ISGID)
 		group = -1; /*setgid bit on dir propagates dir group owner */
@@ -567,7 +559,7 @@ static fsal_status_t makesymlink(struct fsal_obj_handle *dir_hdl,
 	/* create it with no access because we are root when we do this */
 	retval = CRED_WRAP( opctx->creds, int, symlinkat, link_path, dir_fd, name);
 	if(retval < 0) {
-		goto direrr;
+		goto err;
 	}
 	/* do this all by hand because we can't use fchmodat on symlinks...
 	 */
@@ -602,7 +594,7 @@ linkerr:
 	close(dir_fd);
 	goto errout;
 
-direrr:
+err:
 	retval = errno;
 	close(dir_fd);
 errout:
@@ -737,7 +729,7 @@ static fsal_status_t linkfile(struct fsal_obj_handle *obj_hdl,
 	destdirfd = vfs_fsal_open(destdir, O_PATH|O_NOACCESS, &fsal_error);
 	if(destdirfd < 0) {
 		retval = destdirfd;
-		goto fileerr;
+		goto err;
 	}
 
         /* I do not know why, but if this linkat is used as non-root user, it fails with ENOENT 
@@ -749,7 +741,7 @@ static fsal_status_t linkfile(struct fsal_obj_handle *obj_hdl,
 	}
 	close(destdirfd);
 
-fileerr:
+err:
 	if( !(obj_hdl->type == REGULAR_FILE && myself->u.file.fd >= 0))
 		close(srcfd);
 out:
@@ -1025,11 +1017,11 @@ static fsal_status_t setattrs(struct fsal_obj_handle *obj_hdl,
 	if(FSAL_TEST_MASK(attrs->mask, ATTR_SIZE)) {
 		if(obj_hdl->type != REGULAR_FILE) {
 			fsal_error = ERR_FSAL_INVAL;
-			goto fileerr;
+			goto err;
 		}
 		retval = ftruncate(fd, attrs->filesize);
 		if(retval != 0) {
-			goto fileerr;
+			goto err;
 		}
 	}
 
@@ -1049,7 +1041,7 @@ static fsal_status_t setattrs(struct fsal_obj_handle *obj_hdl,
                                                                                fsal2unix_mode(attrs->mode));
 
 			if(retval != 0) {
-				goto fileerr;
+				goto err;
 			}
 		}
 	}
@@ -1080,7 +1072,7 @@ static fsal_status_t setattrs(struct fsal_obj_handle *obj_hdl,
                                                                        group);
 
 		if(retval) {
-			goto fileerr;
+			goto err;
 		}
 	}
 		
@@ -1120,12 +1112,12 @@ static fsal_status_t setattrs(struct fsal_obj_handle *obj_hdl,
 		else
 			retval = CRED_WRAP( opctx->creds, int, futimens, fd, timebuf);
 		if(retval != 0) {
-			goto fileerr;
+			goto err;
 		}
 	}
 	goto out;
 
-fileerr:
+err:
         retval = errno;
         fsal_error = posix2fsal_error(retval);
 out:
@@ -1407,18 +1399,18 @@ fsal_status_t vfs_lookup_path(struct fsal_export *exp_hdl,
 	}
 	retval = fstat(dir_fd, &stat);
 	if( !S_ISDIR(stat.st_mode)) {  /* this had better be a DIR! */
-		goto fileerr;
+		goto err;
 	}
 	basepart++;
 	retval = vfs_fsal_name_to_handle(exp_hdl, dir_fd, basepart, fh);
 	if(retval < 0) {
-		goto fileerr;
+		goto err;
 	}
 
 	/* what about the file? Do no symlink chasing here. */
 	retval = fstatat(dir_fd, basepart, &stat, AT_SYMLINK_NOFOLLOW);
 	if(retval < 0) {
-		goto fileerr;
+		goto err;
 	}
 
 	/* allocate an obj_handle and fill it up */
@@ -1432,7 +1424,7 @@ fsal_status_t vfs_lookup_path(struct fsal_export *exp_hdl,
 	*handle = &hdl->obj_handle;
 	return fsalstat(ERR_FSAL_NO_ERROR, 0);
 
-fileerr:
+err:
 	retval = errno;
 	close(dir_fd);
 	fsal_error = posix2fsal_error(retval);
