@@ -2351,27 +2351,34 @@ void nfs_start(nfs_start_info_t * p_start_info)
   /* Initialize all layers and service threads */
   nfs_Init(p_start_info);
 
-  /* Remove CAP_SYS_RESOURCE */ 
+#ifdef LINUX
+  /* Deal with capabilities in order to remove CAP_SYS_RESOURCE (needed
+   * for proper management of data quotas) */
   caphdr.version = _LINUX_CAPABILITY_VERSION_2 ; // kernel is newer than 2.6.25
   caphdr.pid = getpid() ;
 
   if( capget( &caphdr, &capdata ) != 0 )
-    {
-      LogCrit(COMPONENT_INIT,
-	       "Failed to query capabilities for process" ) ;
-    }
+      LogFatal(COMPONENT_INIT,
+               "Failed to query capabilities for process, errno=%u", errno ) ;
 
-  /* Set the capability bitmask to remove CAP_SYS_RESOURCE */ 
-  capdata.effective   &= ~CAP_TO_MASK( CAP_SYS_RESOURCE );
-  capdata.permitted   &= ~CAP_TO_MASK( CAP_SYS_RESOURCE );
-  capdata.inheritable &= ~CAP_TO_MASK( CAP_SYS_RESOURCE );
+  /* Set the capability bitmask to remove CAP_SYS_RESOURCE */
+  if( capdata.effective & CAP_TO_MASK( CAP_SYS_RESOURCE ) )
+     capdata.effective   &= ~CAP_TO_MASK( CAP_SYS_RESOURCE );
+
+  if( capdata.permitted & CAP_TO_MASK( CAP_SYS_RESOURCE ) )
+     capdata.permitted   &= ~CAP_TO_MASK( CAP_SYS_RESOURCE );
+
+  if( capdata.inheritable & CAP_TO_MASK( CAP_SYS_RESOURCE ) )
+     capdata.inheritable &= ~CAP_TO_MASK( CAP_SYS_RESOURCE );
 
   if( capset( &caphdr, &capdata ) != 0 )
-    {
-      LogCrit(COMPONENT_INIT,
-	       "Failed to set capabilities for process" ) ;
-    }
-  
+      LogFatal(COMPONENT_INIT,
+                 "Failed to set capabilities for process, errno=%u", errno ) ;
+  else
+      LogEvent( COMPONENT_INIT, "CAP_SYS_RESOURCE was successfully removed for proper quota management in FSAL" ) ;
+
+#endif
+
   /* Spawns service threads */
   nfs_Start_threads(p_start_info->flush_datacache_mode);
 
