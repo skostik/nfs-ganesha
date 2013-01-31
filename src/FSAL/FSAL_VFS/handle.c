@@ -636,49 +636,31 @@ vfs_fsal_readlink(struct vfs_fsal_obj_handle *myself,
         int retval = 0;
         int fd, dir_fd;
         ssize_t retlink;
-	struct stat st;
-        int flags = O_PATH|O_NOACCESS|O_NOFOLLOW;
-        struct vfs_fsal_export *ve = NULL;
-        struct fsal_obj_handle *obj_hdl = &myself->obj_handle;
+        char buff[MAXNAMLEN] ;
 
         if(myself->u.symlink.link_content != NULL) {
                 gsh_free(myself->u.symlink.link_content);
                 myself->u.symlink.link_content = NULL;
                 myself->u.symlink.link_size = 0;
         }
+
         fd = vfs_fsal_open(myself, flags, fsal_error);
         if(fd < 0)
                 return fd;
+   
+        retlink = readlinkat(fd, "", buff, MAXNAMLEN ) ;
+        if(retlink < 0) {
+                goto error;
+        }
 
-        retval = vfs_stat_by_handle(fd, myself->handle, &st, flags);
-	if (retval < 0) {
-		goto error;
-	}
-
-	myself->u.symlink.link_size = st.st_size + 1;
+	myself->u.symlink.link_size = retlink+1 ;
 	myself->u.symlink.link_content
 		= gsh_malloc(myself->u.symlink.link_size);
 	if (myself->u.symlink.link_content == NULL) {
 		goto error;
 	}
 
-        /* FreeBSD doesn't support AT_EMPTY_PATH in at-calls so we need to
-         * conjure file descriptor of parent dir */
-        ve = container_of(obj_hdl->export, struct vfs_fsal_export, export);
-        dir_fd = ve->vex_ops.vex_open_by_handle(obj_hdl->export,
-                                            myself->u.symlink.dir,
-                                            O_PATH|O_NOACCESS,
-                                            fsal_error);
-        if(dir_fd < 0) {
-                return dir_fd;
-        }
-        retlink = readlinkat(dir_fd,
-                             myself->u.symlink.path,
-                             myself->u.symlink.link_content,
-			     myself->u.symlink.link_size);
-        if(retlink < 0) {
-		goto error;
-        }
+        strncpy(  myself->u.symlink.link_content, buff, retlink ) ;
 	myself->u.symlink.link_content[retlink] = '\0';
         close(fd);
         close(dir_fd);
