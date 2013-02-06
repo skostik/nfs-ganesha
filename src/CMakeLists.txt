@@ -172,7 +172,7 @@ if(USE_9P_RDMA AND NOT USE_9P)
 endif(USE_9P_RDMA AND NOT USE_9P)
 
 set(ALLOCATOR "jemalloc" CACHE STRING
-  "specify the memory allocator to use: jemalloc|tcmalloc|libc")
+  "specify the memory allocator to use: jemalloc|tcmalloc|mpc|libc")
 
 # Find packages and libs we need for building
 include(CheckIncludeFiles)
@@ -296,6 +296,14 @@ if(${ALLOCATOR} STREQUAL "jemalloc")
     message(WARNING "jemalloc not found, falling back to libc")
     set(ALLOCATOR "libc")
   endif(JEMALLOC_FOUND)
+elseif(${ALLOCATOR} STREQUAL "mpc")
+  find_package(MPC)
+  if(MPC_FOUND)
+     set(SYSTEM_LIBRARIES ${MPC_LIBRARIES})
+  else(MPC_FOUND)
+    message(WARNING "MPC not found, falling back to libc")
+    set(ALLOCATOR "libc")
+  endif(MPC_FOUND)
 elseif(${ALLOCATOR} STREQUAL "tcmalloc")
   find_package(TcMalloc)
   if(TCMALLOC_FOUND)
