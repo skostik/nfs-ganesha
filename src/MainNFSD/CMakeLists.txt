@@ -15,6 +15,12 @@ if(USE_DBUS)
     )
 endif(USE_DBUS)
 
+if(USE_MPC)
+  include_directories(
+  ${MPC_INCLUDE_DIR} 
+  )
+endif(USE_MPC)
+
 ########### next target ###############
 
 SET(MainServices_STAT_SRCS

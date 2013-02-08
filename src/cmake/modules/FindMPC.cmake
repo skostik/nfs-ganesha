@@ -30,6 +30,8 @@ ENDIF()
 SET(_mpc_SEARCH_DIRS
   ${MPC_ROOT_DIR}
   /usr/local
+  /usr/local/MPC
+  /usr/local/mpc
   /sw # Fink
   /opt/local # DarwinPorts
   /opt/csw # Blastwave
@@ -41,7 +43,7 @@ FIND_PATH(MPC_INCLUDE_DIR
   HINTS
     ${_mpc_SEARCH_DIRS}
   PATH_SUFFIXES
-    include/mpc
+    include
 )
 
 FIND_LIBRARY(MPC_LIBRARY
@@ -52,17 +54,14 @@ FIND_LIBRARY(MPC_LIBRARY
   PATH_SUFFIXES
     lib64 lib
   )
+message( STATUS "MPC_LIBRARY = ${MPC_LIBRARY}" )
 
-# handle the QUIETLY and REQUIRED arguments and set MPC_FOUND to TRUE if 
-# all listed variables are TRUE
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(MPC DEFAULT_MSG
-    MPC_LIBRARY MPC_INCLUDE_DIR)
+if( MPC_LIBRARY AND MPC_INCLUDE_DIR)
+  SET( MPC_FOUND TRUE )
+  message( STATUS "MPC Found: MPC_INCLUDE_DIR = ${MPC_INCLUDE_DIR}" )
+  message( STATUS "MPC Found: MPC_LIBRARY = ${MPC_LIBRARY}" )
+endif( MPC_LIBRARY AND MPC_INCLUDE_DIR)
 
-IF(MPC_FOUND)
-  SET(MPC_LIBRARIES ${MPC_LIBRARY})
-  SET(MPC_INCLUDE_DIRS ${MPC_INCLUDE_DIR})
-ENDIF(MPC_FOUND)
 
 MARK_AS_ADVANCED(
   MPC_INCLUDE_DIR

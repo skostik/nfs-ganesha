@@ -80,6 +80,8 @@ option(USE_FSAL_FUSE "build FUSE FSAL" OFF)
 # SHOOK is a variant of Lustre FSAL
 option(USE_FSAL_SHOOK "build SHOOK FSAL" OFF)
 
+# Use MPC or not
+option(USE_MPC, "enable MPC support for NUMA" OFF)
 
 # Build configure options
 option(USE_DBUS "enable DBUS protocol support" OFF)
@@ -287,6 +289,11 @@ if(USE_FSAL_ZFS)
   endif((NOT HAVE_ZFS_LIB) OR (NOT HAVE_LIBZFSWRAP_H))
 endif(USE_FSAL_ZFS)
 
+if(USE_MPC)
+ set( ALLOCATOR "mpc" )  
+endif(USE_MPC)
+set(_USE_MPC ${USE_MPC})
+
 # sort out which allocator to use
 if(${ALLOCATOR} STREQUAL "jemalloc")
   find_package(JeMalloc)
@@ -296,7 +303,7 @@ if(${ALLOCATOR} STREQUAL "jemalloc")
     message(WARNING "jemalloc not found, falling back to libc")
     set(ALLOCATOR "libc")
   endif(JEMALLOC_FOUND)
-elseif(${ALLOCATOR} STREQUAL "mpc")
+elseif( (${ALLOCATOR} STREQUAL "mpc") AND USE_MPC)
   find_package(MPC)
   if(MPC_FOUND)
      set(SYSTEM_LIBRARIES ${MPC_LIBRARIES})
@@ -523,6 +530,8 @@ message(STATUS "USE_FSAL_ZFS = ${USE_FSAL_ZFS}")
 message(STATUS "USE_FSAL_LUSTRE = ${USE_FSAL_LUSTRE}")
 message(STATUS "USE_FSAL_SHOOK = ${USE_FSAL_SHOOK}")
 message(STATUS "USE_DBUS = ${USE_DBUS}")
+message(STATUS "USE_MPC = ${USE_MPC}")
+message(STATUS "_USE_MPC = ${_USE_MPC}")
 message(STATUS "USE_CB_SIMULATOR = ${USE_CB_SIMULATOR}")
 message(STATUS "USE_TIRPC_IPV6 = ${USE_TIRPC_IPV6}")
 message(STATUS "USE_NFSIDMAP = ${USE_NFSIDMAP}")
