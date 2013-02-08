@@ -37,15 +37,6 @@ SET(_mpc_SEARCH_DIRS
   /opt/csw # Blastwave
 )
 
-FIND_PATH(MPC_INCLUDE_DIR
-  NAMES
-    mpc.h
-  HINTS
-    ${_mpc_SEARCH_DIRS}
-  PATH_SUFFIXES
-    include
-)
-
 FIND_LIBRARY(MPC_LIBRARY
   NAMES
     mpc
@@ -55,14 +46,14 @@ FIND_LIBRARY(MPC_LIBRARY
     lib64 lib
   )
 
-if( MPC_LIBRARY AND MPC_INCLUDE_DIR)
+if( MPC_LIBRARY )
   SET( MPC_FOUND TRUE )
-  message( STATUS "MPC Found: MPC_INCLUDE_DIR = ${MPC_INCLUDE_DIR}" )
   message( STATUS "MPC Found: MPC_LIBRARY = ${MPC_LIBRARY}" )
-endif( MPC_LIBRARY AND MPC_INCLUDE_DIR)
+else(  MPC_LIBRARY)
+  message( STATUS "MPC was not found !!!" )
+endif( MPC_LIBRARY )
 
 
 MARK_AS_ADVANCED(
-  MPC_INCLUDE_DIR
   MPC_LIBRARY
 )

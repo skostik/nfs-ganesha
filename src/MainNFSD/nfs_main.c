@@ -45,7 +45,7 @@
 #ifdef _USE_MPC
 int mpc_user_main__ (int argc, char** argv) 
 { 
-   return main( argc, argv ) ;
+   return 1;
 }
 #endif
 
