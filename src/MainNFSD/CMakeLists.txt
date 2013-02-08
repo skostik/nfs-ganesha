@@ -3,6 +3,8 @@ add_definitions(
   -D_GNU_SOURCE
 )
 
+message( STATUS "=========> MPC_INCLUDE_DIR=${MPC_INCLUDE_DIR} USE_MPC=${USE_MPC}" )
+
 include_directories(
   ${PROJECT_SOURCE_DIR}/RPCAL/gssd
   ${LIBTIRPC_INCLUDE_DIR}

@@ -28,7 +28,6 @@
  * @brief The file that contain the 'main' routine for the nfsd.
  *
  */
-//#include "/usr/local/MPC/include/mpc_alloc.h"
 #include "config.h"
 #include "nfs_init.h"
 #include "fsal.h"
@@ -42,6 +41,13 @@
 #include <signal.h>             /* for sigaction */
 #include <errno.h>
 #include "fsal_pnfs.h"
+
+#ifdef _USE_MPC
+int mpc_user_main__ (int argc, char** argv) 
+{ 
+   return main( argc, argv ) ;
+}
+#endif
 
 /* parameters for NFSd startup and default values */
 
