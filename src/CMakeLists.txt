@@ -719,3 +719,9 @@ add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 ########### add a "make srpm" and a "make rpm" ###############
 add_custom_target(rpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_rpm)
 add_custom_target(srpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_srpm)
+
+#### Add cppcheck support #####
+add_custom_target( 
+	cppcheck
+	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ../src
+        )
