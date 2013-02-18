@@ -758,3 +758,8 @@ if(DOXYGEN_FOUND)
     )
 endif(DOXYGEN_FOUND)
 
+#### Add cppcheck support #####
+add_custom_target( 
+	cppcheck
+	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ../src
+        )
