@@ -146,6 +146,7 @@ function run_test
 			NB_SUCCESS=$(($NB_SUCCESS+1))
 			if (( $junit )); then
 				junit_report_success "thomasthon" "$func: $descr" "$dur"
+                        fi
 
 		fi
     fi
