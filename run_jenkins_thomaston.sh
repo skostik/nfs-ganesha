@@ -39,7 +39,7 @@ ssh $SERVER 'nohup /tmp/ganesha.nfsd -d -L /tmp/ganesha.log -f /tmp/vfs.ganesha.
 # run the test
 sleep 5
 
-umount -f /mnt 
+umount -f /mnt || echo "Nothing was mounted on /mnt"
 $MOUNT_CMD || exit 1 
 cd $BASE/non_regression_tests/thomasthon ; ./run_tests.sh -j /mnt || exit 1
 umount -f /mnt
