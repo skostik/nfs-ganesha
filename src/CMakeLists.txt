@@ -760,6 +760,11 @@ endif(DOXYGEN_FOUND)
 
 #### Add cppcheck support #####
 add_custom_target( 
+	cppcheck-xml
+	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ../src 2>cppcheck.xml 
+        )
+
+add_custom_target( 
 	cppcheck
-	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ../src
+	COMMAND  cppcheck -j12 -v --force --enable=all -I`pwd`/include ../src 
         )
