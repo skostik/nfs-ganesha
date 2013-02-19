@@ -95,7 +95,7 @@ function junit_write_xml # (time, nb_failure, tests)
 	
 	cp /dev/null $XML
 	echo "<?xml version=\"1.0\" encoding=\"ISO8859-2\" ?>" > $XML
-	echo "<testsuite name=\"shook.tests\" errors=\"0\" failures=\"$failure\" tests=\"$tests\" time=\"$time\">" >> $XML
+	echo "<testsuite name=\"thomasthon.tests\" errors=\"0\" failures=\"$failure\" tests=\"$tests\" time=\"$time\">" >> $XML
 	cat $TMPXML_PREFIX.tc 		>> $XML
 	echo -n "<system-out><![CDATA[" >> $XML
 	cat $TMPXML_PREFIX.stdout 	>> $XML
@@ -139,14 +139,14 @@ function run_test
 			echo "$func : *FAILED*" >> $SUMMARY
 			NB_ERROR=$(($NB_ERROR+1))
 			if (( $junit )); then
-				junit_report_failure "shook" "$func: $descr" "$dur" "ERROR"
+				junit_report_failure "thomasthon" "$func: $descr" "$dur" "ERROR"
 			fi
 		else
 			echo "$func : OK" >> $SUMMARY
 			NB_SUCCESS=$(($NB_SUCCESS+1))
 			if (( $junit )); then
-				junit_report_success "shook" "$func: $descr" "$dur"
-			fi
+				junit_report_success "thomasthon" "$func: $descr" "$dur"
+
 		fi
     fi
 }
