@@ -16,11 +16,6 @@ case $FSAL in
      mntdirv3=/tmp
      mntdirv4=/vfs
      ;;
-  XFS)
-     header=xfs
-     mntdirv3=/xfs
-     mntdirv4=/fs/xfs
-     ;;
   *)
      echo "unsupported FSAL $FSAL"
      exit 1 
@@ -44,22 +39,14 @@ case $NFS_VERS in
 esac
 
 # Compile ganesha
-cd src
-autoreconf --install || exit 1 
-
-df -k .
-
-failed="FALSE"
-
-./configure --with-fsal=$FSAL  --with-nfs4-minorversion=1 --enable-nlm || exit 1 
-
-make clean 
-
-make -j 3 || make -j 2 || make 
+mkdir -p build 
+cd build
+cmake CCMAKE_BUILD_TYPE=Debug $BASE/src && make 
 
 # Copy ganesha to server
 ssh $SERVER "pkill -9 ganesha "
-scp ./MainNFSD/$header.ganesha.nfsd $SERVER:/tmp
+scp ./MainNFSD/ganesha.nfsd       $SERVER:/tmp
+scp ./FSAL/FSAL_VFS/libfsalvfs.so  $SERVER:/tmp
 
 ssh $SERVER "/tmp/$header.ganesha.nfsd -d -L /tmp/ganesha.log -f /root/$header.ganesha.nfsd.conf -p /tmp/pid.ganesha.$$ &" 
 
