@@ -177,13 +177,11 @@ Release:        ${RPM_RELEASE}
 License:        ${RPM_PACKAGE_LICENSE}
 Group:          ${RPM_PACKAGE_GROUP}
 Source:         ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:	cmake
 Url:            ${RPM_URL}
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 
-%define prefix /opt/${RPMNAME}-%{version}
-%define rpmprefix $RPM_BUILD_ROOT%{prefix}
 %define srcdirname %{name}-%{version}-Source
 
 %description
@@ -193,17 +191,66 @@ ${RPMNAME} : ${RPM_DESCRIPTION}
 
 # if needed deal with FSAL modules
 if(USE_FSAL_CEPH)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"%description ceph
-This is FSAL_VFS package. This package contains a FSAL shared object to 
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
+%package ceph
+Summary: The NFS-GANESHA's CEPH FSAL
+Group: Applications/System
+
+%description ceph
+This package contains a FSAL shared object to 
 be used with NFS-Ganesha to suppport CEPH
 ")
 endif(USE_FSAL_CEPH)
 
+if(USE_FSAL_LUSTRE)
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
+%package lustre
+Summary: The NFS-GANESHA's LUSTRE FSAL
+Group: Applications/System
+BuildRequires: libattr-devel lustre-client
+
+%description lustre
+This package contains a FSAL shared object to 
+be used with NFS-Ganesha to suppport LUSTRE
+")
+endif(USE_FSAL_LUSTRE)
+
+if(USE_FSAL_POSIX)
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
+%package posix
+Summary: The NFS-GANESHA's LUSTRE FSAL
+Group: Applications/System
+BuildRequires: libattr-devel
+
+%description posix
+This package contains a FSAL shared object to 
+be used with NFS-Ganesha to suppport POSIX
+")
+endif(USE_FSAL_POSIX)
+
+if(USE_FSAL_SHOOK)
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
+%package shook
+Summary: The NFS-GANESHA's LUSTRE/SHOOK FSAL
+Group: Applications/System
+BuildRequires: libattr-devel lustre-client shook-devel
+
+%description shook
+This package contains a FSAL shared object to 
+be used with NFS-Ganesha to suppport LUSTRE
+")
+endif(USE_FSAL_SHOOK)
+
 if(USE_FSAL_VFS)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"%description vfs
-This is FSAL_VFS package. This package contains a FSAL shared object to 
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
+%package vfs
+Summary: The NFS-GANESHA's VFS FSAL
+Group: Applications/System
+BuildRequires: libattr-devel
+
+
+%description vfs
+This package contains a FSAL shared object to 
 be used with NFS-Ganesha to suppport VFS based filesystems
 ")
 endif(USE_FSAL_VFS)
@@ -287,7 +334,7 @@ rm -rf build_tree
 
 %files
 %defattr(-,root,root,-)
-%{_bindir}/* 
+%{_bindir}/*
 %{_sysconfdir}/*
 "
 )

@@ -31,6 +31,6 @@ set(CPACK_GENERATOR "STGZ;TGZ;TZ;DEB;RPM")
 set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2;TZ;DEB")
 
 set(CPACK_SOURCE_IGNORE_FILES
-  "/build/;/.bzr/;~$;${CPACK_SOURCE_IGNORE_FILES}")
+  "/.git/;".gitignore";/build/;/.bzr/;~$;${CPACK_SOURCE_IGNORE_FILES}")
 
 
