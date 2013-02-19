@@ -29,7 +29,7 @@ cd build
 cmake CCMAKE_BUILD_TYPE=Debug $BASE/src && make 
 
 # Copy ganesha to server
-ssh $SERVER "pkill -9 ganesha.nfsd"
+ssh $SERVER "pkill -9 ganesha.nfsd" || echo "Nothing to kill remotely"
 scp ./MainNFSD/ganesha.nfsd        $SERVER:/tmp
 scp ./FSAL/FSAL_VFS/libfsalvfs.so  $SERVER:/tmp
 scp ../vfs.ganesha.nfsd.conf       $SERVER:/tmp
@@ -41,11 +41,12 @@ sleep 5
 
 umount -f /mnt 
 $MOUNT_CMD || exit 1 
-cd $BASE/non_regression_tests/thomasthon ; ./run_tests.sh  /mnt || exit 1
+cd $BASE/non_regression_tests/thomasthon ; ./run_tests.sh -j /mnt || exit 1
 umount -f /mnt
 
 ssh $SERVER 'pkill -9 ganesha.nfsd'
 
+cp /tmp/test_report.xml $BASE/build
 echo
 echo "===== thomasthon test is OK ===="
 echo 
