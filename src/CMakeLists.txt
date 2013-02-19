@@ -752,10 +752,10 @@ add_custom_target(srpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_srpm)
 #### Add cppcheck support #####
 add_custom_target( 
 	cppcheck-xml
-	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ../src 2>../src/cppcheck.xml 
+	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ${CMAKE_CURRENT_SOURCE_DIR}  2>cppcheck.xml 
         )
 
 add_custom_target( 
 	cppcheck
-	COMMAND  cppcheck -j12 -v --force --enable=all -I`pwd`/include ../src 
+	COMMAND  cppcheck -j12 -v --force --enable=all -I`pwd`/include ${CMAKE_CURRENT_SOURCE_DIR}
         )
