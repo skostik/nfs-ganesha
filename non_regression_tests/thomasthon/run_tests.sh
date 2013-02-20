@@ -204,7 +204,7 @@ function test4g
 run_test test1   "copy file with 444 mode"
 run_test test2   "rm -rf of wide namespace"
 run_test test3b  "cthon04's basic tests"
-#run_test test3g  "cthon04's general tests"
+run_test test3g  "cthon04's general tests"
 run_test test3s  "cthon04's special tests"
 #run_test test3l  "cthon04's lock tests"
 run_test test4g  "git clone a local repository"
