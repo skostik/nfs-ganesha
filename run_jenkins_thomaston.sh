@@ -17,6 +17,9 @@ case $NFS_VERS in
   4.1)
     MOUNT_CMD="mount -o vers=4,minorversion=1,lock $SERVER:/tmp /mnt" 
     ;;
+  9P)
+    MOUNT_CMD="mount -t 9P $SERVER:/tmp /mnt" 
+    ;;
   *)
     echo "unsupported NFS_VERS $NFS_VERS"
     exit 1 
