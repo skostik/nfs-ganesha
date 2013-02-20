@@ -95,6 +95,14 @@ nfs_parameter_t nfs_param =
   .core_param.program[P_NLM] = NLMPROG,
 #ifdef _USE_9P
   ._9p_param._9p_tcp_port = _9P_TCP_PORT ,
+  ._9p_param._9p_fid_hash_param.index_size = PRIME_IP_NAME,
+  ._9p_param._9p_fid_hash_param.alphabet_length = 10,   
+  ._9p_param._9p_fid_hash_param.hash_func_key = _9p_fid_value_hash_func, 
+  ._9p_param._9p_fid_hash_param.hash_func_rbt = _9p_fid_rbt_hash_func,
+  ._9p_param._9p_fid_hash_param.compare_key = compare_9p_fid_key,
+  ._9p_param._9p_fid_hash_param.key_to_str = NULL , /* @todo : segfault will result of this */
+  ._9p_param._9p_fid_hash_param.val_to_str = NULL , /* @todo : segfault will result of this */
+  ._9p_param._9p_fid_hash_param.flags = HT_FLAG_NONE, 
 #endif
 #ifdef _USE_9P_RDMA
   ._9p_param._9p_rdma_port = _9P_RDMA_PORT,

@@ -5,6 +5,7 @@ SET(9p_STAT_SRCS
    9p_interpreter.c
    9p_proto_tools.c
    9p_read_conf.c
+   9p_fid_hash.c
    9p_attach.c
    9p_auth.c
    9p_clunk.c

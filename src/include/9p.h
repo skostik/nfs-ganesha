@@ -286,9 +286,15 @@ typedef struct _9p_qid {
 
 typedef struct _9p_param__
 {
-  unsigned short _9p_tcp_port ;
-  unsigned short _9p_rdma_port ;
+  unsigned short    _9p_tcp_port ;
+  unsigned short    _9p_rdma_port ;
+  hash_parameter_t  _9p_fid_hash_param ;
 } _9p_parameter_t ;
+
+typedef struct _9p_fid_key__
+{
+  unsigned int nothing ;
+} _9p_fid_key_t ;
 
 typedef struct _9p_fid__
 {
@@ -392,6 +398,22 @@ typedef struct _9p_request_data__
 #endif
   _9p_flush_hook_t flush_hook;
 } _9p_request_data_t ;
+
+/* Hash fid related functions */
+int compare_9p_fid_key(_9p_fid_key_t *key1,
+                       _9p_fid_key_t *key2) ;
+uint32_t _9p_fid_value_hash_func(hash_parameter_t *hparam,
+                                 struct gsh_buffdesc *key) ;
+uint64_t _9p_fid_rbt_hash_func(hash_parameter_t *hparam,
+                               struct gsh_buffdesc *key) ;
+int display_9p_fid_key(_9p_fid_key_t * *key, char *str) ;
+int display_9p_fid_val(struct gsh_buffdesc *buff, char *str) ;
+
+
+
+
+
+
 
 
 
