@@ -43,8 +43,17 @@
 #include "log.h"
 #include "9p.h"
 
+extern hash_table_t *ht_9p_fid;
+
 int _9p_init(  _9p_parameter_t * pparam ) 
 {
+  if( ( ht_9p_fid = HashTable_Init( &pparam->_9p_fid_hash_param ) ) == NULL )
+   {
+      LogCrit(COMPONENT_INIT, "9P: Cannot init 9P Fid Hashtables" ) ;
+      return  -1  ;
+   }
+  else
+     LogEvent( COMPONENT_INIT, "9P: Hash for Fids is set up" ) ;
   return 0 ;
 } /* _9p_init */
 
@@ -57,7 +66,7 @@ int _9p_tools_get_req_context_by_uid( u32 uid, _9p_fid_t * pfid )
 
   if((getpwuid_r( uid, &p, buff, MAXPATHLEN, &pp) != 0) || (pp == NULL))
     {
-      LogFullDebug(COMPONENT_IDMAPPER, "getpwuid_r %d failed", uid ) ;
+      LogFullDebug(COMPONENT_9P, "getpwuid_r %d failed", uid ) ;
       return -ENOENT;
     }
   else

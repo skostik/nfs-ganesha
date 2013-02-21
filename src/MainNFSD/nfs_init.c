@@ -100,8 +100,8 @@ nfs_parameter_t nfs_param =
   ._9p_param._9p_fid_hash_param.hash_func_key = _9p_fid_value_hash_func, 
   ._9p_param._9p_fid_hash_param.hash_func_rbt = _9p_fid_rbt_hash_func,
   ._9p_param._9p_fid_hash_param.compare_key = compare_9p_fid_key,
-  ._9p_param._9p_fid_hash_param.key_to_str = NULL , /* @todo : segfault will result of this */
-  ._9p_param._9p_fid_hash_param.val_to_str = NULL , /* @todo : segfault will result of this */
+  ._9p_param._9p_fid_hash_param.key_to_str = display_9p_fid_key, 
+  ._9p_param._9p_fid_hash_param.val_to_str = display_9p_fid_val,
   ._9p_param._9p_fid_hash_param.flags = HT_FLAG_NONE, 
 #endif
 #ifdef _USE_9P_RDMA

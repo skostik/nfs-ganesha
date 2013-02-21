@@ -291,11 +291,6 @@ typedef struct _9p_param__
   hash_parameter_t  _9p_fid_hash_param ;
 } _9p_parameter_t ;
 
-typedef struct _9p_fid_key__
-{
-  unsigned int nothing ;
-} _9p_fid_key_t ;
-
 typedef struct _9p_fid__
 {
   u32                     fid ;
@@ -305,7 +300,7 @@ typedef struct _9p_fid__
   cache_entry_t         * pentry ;
   _9p_qid_t               qid ;
   cache_entry_t         * ppentry ;
-  char                    name[MAXNAMLEN] ;
+  char                    name[MAXNAMLEN] ; 
   union 
     { 
        u32      iounit ;
@@ -323,6 +318,13 @@ typedef enum _9p_trans_type__
   _9P_TCP,
   _9P_RDMA
 } _9p_trans_type_t ;
+
+typedef struct _9p_fid_key__
+{
+  u32               client_addr ; /* @todo use a sockaddr storage here */
+  _9p_trans_type_t  trans_type ; 
+  u32               fid ;
+} _9p_fid_key_t ;
 
 struct flush_condition;
 
@@ -364,7 +366,6 @@ typedef struct _9p_conn__
    } trans_data ;
   _9p_trans_type_t trans_type ;
   uint32_t        refcount;
-  struct timeval  birth;  /* This is useful if same sockfd is reused on socket's close/open  */
   _9p_fid_t       fids[_9P_FID_PER_CONN] ;
   _9p_flush_bucket_t flush_buckets[FLUSH_BUCKETS];
   unsigned long sequence ;
@@ -400,20 +401,14 @@ typedef struct _9p_request_data__
 } _9p_request_data_t ;
 
 /* Hash fid related functions */
-int compare_9p_fid_key(_9p_fid_key_t *key1,
-                       _9p_fid_key_t *key2) ;
+int compare_9p_fid_key(struct gsh_buffdesc * key1,
+                       struct gsh_buffdesc * key2) ;
 uint32_t _9p_fid_value_hash_func(hash_parameter_t *hparam,
                                  struct gsh_buffdesc *key) ;
 uint64_t _9p_fid_rbt_hash_func(hash_parameter_t *hparam,
                                struct gsh_buffdesc *key) ;
-int display_9p_fid_key(_9p_fid_key_t * *key, char *str) ;
-int display_9p_fid_val(struct gsh_buffdesc *buff, char *str) ;
-
-
-
-
-
-
+int display_9p_fid_key(struct gsh_buffdesc * buff, char *str) ;
+int display_9p_fid_val(struct gsh_buffdesc * buff, char *str) ;
 
 
 
