@@ -34,7 +34,7 @@ ENDIF (RPMTools_RPMBUILD_EXECUTABLE)
 IF (NOT DEFINED "CPACK_PACKAGE_NAME") 
     MESSAGE(FATAL_ERROR "CPack was not included, you should include CPack before Using RPMTools")
 ENDIF (NOT DEFINED "CPACK_PACKAGE_NAME")
-  
+
 IF (RPMTools_RPMBUILD_FOUND)
     SET(RPMTools_FOUND TRUE)    
     #
@@ -61,8 +61,110 @@ IF (RPMTools_RPMBUILD_FOUND)
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR}/SPECS)
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR}/SRPMS)
 
+   # rpmbuid.cmake, which defines rpmbuidl cmake's build type is defined on the fly to reflect the state of cmake's cache
+   # if not, this cache is lost at the time the *-Source/tar/gz is generated. 
+   SET(RPMBULILD_CMAKE ${RPM_ROOTDIR}/BUILD/${RPM_NAME}-${PACKAGE_VERSION}-Source/cmake/build_configurations/rpmbuild.cmake )
+   FILE( WRITE ${RPMBULILD_CMAKE}  "set(_HANDLE_MAPPING ON)
+" )
+   FILE( APPEND ${RPMBULILD_CMAKE} "set(_NO_XATTRD  OFF)
+" )
+   FILE( APPEND ${RPMBULILD_CMAKE} "set(USE_DBUS ON)
+" )
+   FILE( APPEND ${RPMBULILD_CMAKE} "set(USE_DBUS_STATS ON)
+" )
+
+IF( USE_FSAL_VFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_VFS ON)
+	" ) 
+ELSE(  USE_FSAL_VFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_VFS OFF)
+" ) 
+ENDIF( USE_FSAL_VFS )
+
+IF( USE_FSAL_CEPH )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_CEPH ON)
+" ) 
+ELSE(  USE_FSAL_CEPH )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_CEPH OFF)
+" ) 
+ENDIF( USE_FSAL_CEPH )
+
+IF( USE_FSAL_FUSE )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_FUSE ON)
+" ) 
+ELSE(  USE_FSAL_FUSE )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_FUSE OFF)
+" ) 
+ENDIF( USE_FSAL_FUSE )
+
+IF( USE_FSAL_GPFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_GPFS ON)
+	" ) 
+ELSE(  USE_FSAL_GPFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_GPFS OFF)
+" ) 
+ENDIF( USE_FSAL_GPFS )
+
+IF( USE_FSAL_HPSS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_HPSS ON)
+" ) 
+ELSE(  USE_FSAL_HPSS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_HPSS OFF)
+" ) 
+ENDIF( USE_FSAL_HPSS )
+
+IF( USE_FSAL_LUSTRE )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_LUSTRE ON)
+" ) 
+ELSE(  USE_FSAL_LUSTRE )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_LUSTRE OFF)
+" ) 
+ENDIF( USE_FSAL_LUSTRE )
+
+IF( USE_FSAL_POSIX )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_POSIX ON)
+" ) 
+ELSE(  USE_FSAL_POSIX )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_POSIX OFF)
+" ) 
+ENDIF( USE_FSAL_POSIX )
+
+IF( USE_FSAL_PROXY )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_PROXY ON)
+" ) 
+ELSE(  USE_FSAL_PROXY )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_PROXY OFF)
+" ) 
+ENDIF( USE_FSAL_PROXY )
+
+IF( USE_FSAL_SHOOK )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_SHOOK ON)
+" ) 
+ELSE(  USE_FSAL_SHOOK )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_SHOOK OFF)
+" ) 
+ENDIF( USE_FSAL_SHOOK )
+
+IF( USE_FSAL_XFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_XFS ON)
+" ) 
+ELSE(  USE_FSAL_XFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_XFS OFF)
+" ) 
+ENDIF( USE_FSAL_XFS )
+
+IF( USE_FSAL_ZFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_ZFS ON)
+" ) 
+ELSE( USE_FSAL_ZFS )
+   FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_ZFS OFF)
+" ) 
+ENDIF( USE_FSAL_ZFS )
+
+
+
       # Read RPM changelog and store the result into a variable
-      EXEC_PROGRAM(cat ARGS ${RPM_CHANGELOG_FILE} OUTPUT_VARIABLE RPM_CHANGELOG_FILE_CONTENT)
+      FILE( READ "${RPM_CHANGELOG_FILE}" RPM_CHANGELOG_FILE_CONTENT )
 
       SET(SPECFILE_PATH "${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec")
       SET(SPECFILE_NAME "${RPMNAME}.spec")
@@ -75,11 +177,13 @@ Release:        ${RPM_RELEASE}
 License:        ${RPM_PACKAGE_LICENSE}
 Group:          ${RPM_PACKAGE_GROUP}
 Source:         ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar.gz
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:	cmake
 Url:            ${RPM_URL}
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 
+%define prefix /opt/${RPMNAME}-%{version}
+%define rpmprefix $RPM_BUILD_ROOT%{prefix}
 %define srcdirname %{name}-%{version}-Source
 
 %description
@@ -89,66 +193,17 @@ ${RPMNAME} : ${RPM_DESCRIPTION}
 
 # if needed deal with FSAL modules
 if(USE_FSAL_CEPH)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package ceph
-Summary: The NFS-GANESHA's CEPH FSAL
-Group: Applications/System
-
-%description ceph
-This package contains a FSAL shared object to 
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
+"%description ceph
+This is FSAL_VFS package. This package contains a FSAL shared object to 
 be used with NFS-Ganesha to suppport CEPH
 ")
 endif(USE_FSAL_CEPH)
 
-if(USE_FSAL_LUSTRE)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package lustre
-Summary: The NFS-GANESHA's LUSTRE FSAL
-Group: Applications/System
-BuildRequires: libattr-devel lustre-client
-
-%description lustre
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport LUSTRE
-")
-endif(USE_FSAL_LUSTRE)
-
-if(USE_FSAL_POSIX)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package posix
-Summary: The NFS-GANESHA's LUSTRE FSAL
-Group: Applications/System
-BuildRequires: libattr-devel
-
-%description posix
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport POSIX
-")
-endif(USE_FSAL_POSIX)
-
-if(USE_FSAL_SHOOK)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package shook
-Summary: The NFS-GANESHA's LUSTRE/SHOOK FSAL
-Group: Applications/System
-BuildRequires: libattr-devel lustre-client shook-devel
-
-%description shook
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport LUSTRE
-")
-endif(USE_FSAL_SHOOK)
-
 if(USE_FSAL_VFS)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package vfs
-Summary: The NFS-GANESHA's VFS FSAL
-Group: Applications/System
-BuildRequires: libattr-devel
-
-
-%description vfs
-This package contains a FSAL shared object to 
+FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
+"%description vfs
+This is FSAL_VFS package. This package contains a FSAL shared object to 
 be used with NFS-Ganesha to suppport VFS based filesystems
 ")
 endif(USE_FSAL_VFS)
@@ -202,7 +257,7 @@ cd ..
 rm -rf build_tree
 mkdir build_tree
 cd build_tree
-cmake -DCMAKE_INSTALL_PREFIX=$RPM_BUILD_ROOT/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_CONFIG=rpmbuild -DUSE_FSAL_GPFS=OFF -DUSE_FSAL_XFS=OFF ../%{srcdirname}
+cmake -DCMAKE_INSTALL_PREFIX=$RPM_BUILD_ROOT/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_CONFIG=rpmbuild ../%{srcdirname}
 make
   
 %install 
@@ -232,7 +287,7 @@ rm -rf build_tree
 
 %files
 %defattr(-,root,root,-)
-%{_bindir}/*
+%{_bindir}/* 
 %{_sysconfdir}/*
 "
 )

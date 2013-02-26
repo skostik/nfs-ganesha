@@ -34,9 +34,34 @@ IF(RPMTools_FOUND)
      RPMTools_ADD_RPM_TARGETS(${PROJECT_NAME})
 ENDIF(RPMTools_FOUND)
 
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC _GIT_HEAD_COMMIT)
-git_describe(_GIT_DESCRIBE)
+SET( HEAD_FROM_GIT  /tmp/.ganesha_head_from_git  )
+SET( DESCRIBE_FROM_GIT  /tmp/.ganesha_describe_from_git  )
+# If we are in a git tree, then this CMakeLists.txt is in "src/" and go .git is in "src/.."
+IF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
+  message( STATUS "Compilation from within a git repository. Using GetGitRevisionDescription" )
+  include(GetGitRevisionDescription)
+  get_git_head_revision(GIT_REFSPEC _GIT_HEAD_COMMIT)
+  git_describe(_GIT_DESCRIBE)
+
+  FILE( WRITE ${HEAD_FROM_GIT}     "${_GIT_HEAD_COMMIT}" )
+  FILE( WRITE ${DESCRIBE_FROM_GIT} "${_GIT_DESCRIBE}" )
+
+ELSE( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
+  message( STATUS "Outside a git repository, use saved data" )
+
+  IF( EXISTS ${HEAD_FROM_GIT} )
+    FILE( READ "${HEAD_FROM_GIT}" _GIT_HEAD_COMMIT )
+  ELSE( EXISTS ${HEAD_FROM_GIT} )
+    set( _GIT_HEAD_COMMIT "NO-GIT-DATA" )
+  ENDIF( EXISTS ${HEAD_FROM_GIT} )
+
+  IF( EXISTS ${DESCRIBE_FROM_GIT} )
+    FILE( READ "${DESCRIBE_FROM_GIT}" _GIT_DESCRIBE )
+  ELSE( EXISTS ${DESCRIBE_FROM_GIT} )
+    set( _GIT_DESCRIBE "NO-GIT-DATA" )
+  ENDIF( EXISTS ${DESCRIBE_FROM_GIT} )
+
+ENDIF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
 
 # find out which platform we are building on
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -564,6 +589,9 @@ message(STATUS "KRB5_PREFIX = ${KRB5_PREFIX}")
 message(STATUS "CEPH_PREFIX = ${CEPH_PREFIX}")
 message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
 message(STATUS "ALLOCATOR = ${ALLOCATOR}")
+message(STATUS "_GIT_HEAD_COMMIT = ${_GIT_HEAD_COMMIT}")
+message(STATUS "_GIT_DESCRIBE = ${_GIT_DESCRIBE}")
+
 
 #force command line options to be stored in cache
 set(USE_FSAL_VFS ${USE_FSAL_VFS}
