@@ -28,10 +28,10 @@ set(CPACK_COMPONENT_HEADERS_DISPLAY_NAME "Headers")
 include(${CMAKE_SOURCE_DIR}/cmake/cpack_config.cmake)
 include(CPack)
 
-include(${CMAKE_SOURCE_DIR}/cmake/rpmtools_config.cmake)
+set( PACKAGE_VERSION "2.0.0"  )
 include(${CMAKE_SOURCE_DIR}/cmake/modules/UseRPMTools.cmake)
 IF(RPMTools_FOUND)
-     RPMTools_ADD_RPM_TARGETS(${PROJECT_NAME})
+     RPMTools_ADD_RPM_TARGETS(nfs-ganesha)
 ENDIF(RPMTools_FOUND)
 
 include(GetGitRevisionDescription)
