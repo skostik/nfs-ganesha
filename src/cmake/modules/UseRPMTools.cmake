@@ -14,31 +14,38 @@
 # https://savannah.nongnu.org/projects/tsp
 #
 
-# Look for RPM builder executable
-FIND_PROGRAM(RPMTools_RPMBUILD_EXECUTABLE 
+IF (WIN32)  
+  MESSAGE(STATUS "RPM tools not available on Win32 systems")
+ENDIF(WIN32)
+
+IF (UNIX)
+  # Look for RPM builder executable
+  FIND_PROGRAM(RPMTools_RPMBUILD_EXECUTABLE 
     NAMES rpmbuild
     PATHS "/usr/bin;/usr/lib/rpm"
     PATH_SUFFIXES bin
     DOC "The RPM builder tool")
   
-IF (RPMTools_RPMBUILD_EXECUTABLE)
+  IF (RPMTools_RPMBUILD_EXECUTABLE)
     MESSAGE(STATUS "Looking for RPMTools... - found rpmuild is ${RPMTools_RPMBUILD_EXECUTABLE}")
     SET(RPMTools_RPMBUILD_FOUND "YES")
     GET_FILENAME_COMPONENT(RPMTools_BINARY_DIRS ${RPMTools_RPMBUILD_EXECUTABLE} PATH)
-ELSE (RPMTools_RPMBUILD_EXECUTABLE) 
+  ELSE (RPMTools_RPMBUILD_EXECUTABLE) 
     SET(RPMTools_RPMBUILD_FOUND "NO")
     MESSAGE(STATUS "Looking for RPMTools... - rpmbuild NOT FOUND")
-ENDIF (RPMTools_RPMBUILD_EXECUTABLE) 
+  ENDIF (RPMTools_RPMBUILD_EXECUTABLE) 
   
-# Detect if CPack was included or not
-IF (NOT DEFINED "CPACK_PACKAGE_NAME") 
+  # Detect if CPack was included or not
+  IF (NOT DEFINED "CPACK_PACKAGE_NAME") 
     MESSAGE(FATAL_ERROR "CPack was not included, you should include CPack before Using RPMTools")
-ENDIF (NOT DEFINED "CPACK_PACKAGE_NAME")
+  ENDIF (NOT DEFINED "CPACK_PACKAGE_NAME")
   
-IF (RPMTools_RPMBUILD_FOUND)
+  IF (RPMTools_RPMBUILD_FOUND)
     SET(RPMTools_FOUND TRUE)    
     #
     # - first arg  (ARGV0) is RPM name
+    # - second arg (ARGV1) is the RPM spec file path [optional]
+    # - third arg  (ARGV2) is the RPM ROOT DIRECTORY used to build RPMs [optional]
     #
     MACRO(RPMTools_ADD_RPM_TARGETS RPMNAME)
 
@@ -51,8 +58,15 @@ IF (RPMTools_RPMBUILD_FOUND)
 	SET(SPECFILE_PATH "${ARGV1}")
       ENDIF("${ARGV1}" STREQUAL "")
       
+      # Verify whether if RPM_ROOTDIR was provided or not
+      IF("${ARGV2}" STREQUAL "") 
+	SET(RPM_ROOTDIR ${CMAKE_BINARY_DIR}/RPM)
+      ELSE ("${ARGV2}" STREQUAL "")
+	SET(RPM_ROOTDIR "${ARGV2}")	
+      ENDIF("${ARGV2}" STREQUAL "")
+      MESSAGE(STATUS "RPMTools:: Using RPM_ROOTDIR=${RPM_ROOTDIR}")
+
       # Prepare RPM build tree
-      SET(RPM_ROOTDIR ${CMAKE_BINARY_DIR}/RPM)
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR})
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR}/tmp)
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR}/BUILD)
@@ -61,139 +75,33 @@ IF (RPMTools_RPMBUILD_FOUND)
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR}/SPECS)
       FILE(MAKE_DIRECTORY ${RPM_ROOTDIR}/SRPMS)
 
-      # Read RPM changelog and store the result into a variable
-      EXEC_PROGRAM(cat ARGS ${RPM_CHANGELOG_FILE} OUTPUT_VARIABLE RPM_CHANGELOG_FILE_CONTENT)
-
-      SET(SPECFILE_PATH "${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec")
-      SET(SPECFILE_NAME "${RPMNAME}.spec")
-      FILE(WRITE ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec
+      #
+      # We check whether if the provided spec file is
+      # to be configure or not.
+      # 
+      IF ("${ARGV1}" STREQUAL "")
+	SET(SPECFILE_PATH "${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec")
+	SET(SPECFILE_NAME "${RPMNAME}.spec")
+	MESSAGE(STATUS "No Spec file given generate a minimal one --> ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec")
+      	FILE(WRITE ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec
 	  "# -*- rpm-spec -*-
-Summary:        ${RPM_SUMMARY}
+Summary:        ${RPMNAME}
 Name:           ${RPMNAME}
 Version:        ${PACKAGE_VERSION}
-Release:        ${RPM_RELEASE}
-License:        ${RPM_PACKAGE_LICENSE}
-Group:          ${RPM_PACKAGE_GROUP}
+Release:        1
+License:        Unknown
+Group:          Unknown
 Source:         ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar.gz
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires:	cmake
-Url:            ${RPM_URL}
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-
+%define prefix /opt/${RPMNAME}-%{version}
+%define rpmprefix $RPM_BUILD_ROOT%{prefix}
 %define srcdirname %{name}-%{version}-Source
 
 %description
-${RPMNAME} : ${RPM_DESCRIPTION}
+${RPMNAME} : No description for now
 
- ")
-
-# if needed deal with FSAL modules
-if(USE_FSAL_CEPH)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package ceph
-Summary: The NFS-GANESHA's CEPH FSAL
-Group: Applications/System
-
-%description ceph
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport CEPH
-")
-endif(USE_FSAL_CEPH)
-
-if(USE_FSAL_LUSTRE)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package lustre
-Summary: The NFS-GANESHA's LUSTRE FSAL
-Group: Applications/System
-BuildRequires: libattr-devel lustre-client
-
-%description lustre
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport LUSTRE
-")
-endif(USE_FSAL_LUSTRE)
-
-if(USE_FSAL_POSIX)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package posix
-Summary: The NFS-GANESHA's LUSTRE FSAL
-Group: Applications/System
-BuildRequires: libattr-devel
-
-%description posix
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport POSIX
-")
-endif(USE_FSAL_POSIX)
-
-if(USE_FSAL_SHOOK)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package shook
-Summary: The NFS-GANESHA's LUSTRE/SHOOK FSAL
-Group: Applications/System
-BuildRequires: libattr-devel lustre-client shook-devel
-
-%description shook
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport LUSTRE
-")
-endif(USE_FSAL_SHOOK)
-
-if(USE_FSAL_VFS)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package vfs
-Summary: The NFS-GANESHA's VFS FSAL
-Group: Applications/System
-BuildRequires: libattr-devel
-
-
-%description vfs
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport VFS based filesystems
-")
-endif(USE_FSAL_VFS)
-
-if(USE_FSAL_PROXY)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package proxy
-Summary: The NFS-GANESHA's VFS FSAL
-Group: Applications/System
-BuildRequires: libattr-devel
-
-
-%description proxy
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport PROXY based filesystems
-")
-endif(USE_FSAL_PROXY)
-
-if(USE_FSAL_HPSS)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package hpss
-Summary: The NFS-GANESHA's HPSS FSAL
-Group: Applications/System
-
-%description hpss
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport HPSS 
-")
-endif(USE_FSAL_HPSS)
-
-if(USE_FSAL_ZFS)
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  "
-%package zfs
-Summary: The NFS-GANESHA's ZFS FSAL
-Group: Applications/System
-BuildRequires: libzfswrap-devel
-
-%description zfs
-This package contains a FSAL shared object to 
-be used with NFS-Ganesha to suppport ZFS 
-")
-endif(USE_FSAL_ZFS)
-
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
 %prep
 %setup -q -n %{srcdirname}
 
@@ -202,27 +110,10 @@ cd ..
 rm -rf build_tree
 mkdir build_tree
 cd build_tree
-cmake -DCMAKE_INSTALL_PREFIX=$RPM_BUILD_ROOT/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_CONFIG=rpmbuild -DUSE_FSAL_GPFS=OFF -DUSE_FSAL_XFS=OFF ../%{srcdirname}
+cmake -DCMAKE_INSTALL_PREFIX=%{rpmprefix} ../%{srcdirname}
 make
   
 %install 
-rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/ganesha/
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/init.d
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d
-mkdir -p $RPM_BUILD_ROOT%{_bindir}
-mkdir -p $RPM_BUILD_ROOT%{_libdir}/ganesha
-
-install -m 644 config_samples/logrotate_ganesha   $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/ganesha
-install -m 755 ganesha.init                       $RPM_BUILD_ROOT%{_sysconfdir}/init.d/ganesha
-install -m 755 ganesha.sysconfig                  $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/ganesha
-
-install -m 644 config_samples/ganesha.conf   $RPM_BUILD_ROOT%{_sysconfdir}/ganesha
-install -m 644 config_samples/hosts.ganesha  $RPM_BUILD_ROOT%{_sysconfdir}/ganesha
-install -m 644 config_samples/snmp.conf      $RPM_BUILD_ROOT%{_sysconfdir}/ganesha
-
 cd ../build_tree
 make install
 
@@ -232,110 +123,48 @@ rm -rf build_tree
 
 %files
 %defattr(-,root,root,-)
-%{_bindir}/*
-%{_sysconfdir}/*
-"
-)
-# if needed deal with FSALs
-if(USE_FSAL_CEPH)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files ceph
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalceph*
+%dir %{prefix}
+%{prefix}/*
 
-" )
-endif(USE_FSAL_CEPH)
-
-if(USE_FSAL_LUSTRE)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files lustre
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsallustre*
-
-" )
-endif(USE_FSAL_LUSTRE)
-
-if(USE_FSAL_POSIX)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files posix
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalposix*
-
-" )
-endif(USE_FSAL_POSIX)
-
-if(USE_FSAL_SHOOK)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files shook
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalshook*
-
-" )
-endif(USE_FSAL_SHOOK)
-
-
-if(USE_FSAL_VFS)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files vfs
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalvfs*
-
-" )
-endif(USE_FSAL_VFS)
-
-if(USE_FSAL_HPSS)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files hpss
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalhpss*
-
-" )
-endif(USE_FSAL_HPSS)
-
-if(USE_FSAL_PROXY)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files proxy
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalproxy*
-
-" )
-endif(USE_FSAL_PROXY)
-
-if(USE_FSAL_ZFS)
-        FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
-%files zfs
-%defattr(-,root,root,-)
-%{_libdir}/ganesha/libfsalzfs*
-
-" )
-endif(USE_FSAL_ZFS)
-
-# Append changelog
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec  
-"
 %changelog
-"
-)
+* Wed Feb 28 2007 Erk <eric.noulard@gmail.com>
+  Generated by CMake UseRPMTools macros"
+	)
 
-FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec ${RPM_CHANGELOG_FILE_CONTENT} )
+      ELSE ("${ARGV1}" STREQUAL "")
+	SET(SPECFILE_PATH "${ARGV1}")
+	
+	GET_FILENAME_COMPONENT(SPECFILE_EXT ${SPECFILE_PATH} EXT)      
+	IF ("${SPECFILE_EXT}" STREQUAL ".spec")
+	  # This is a 'ready-to-use' spec file which does not need to be CONFIGURED
+	  GET_FILENAME_COMPONENT(SPECFILE_NAME ${SPECFILE_PATH} NAME)
+	  MESSAGE(STATUS "Simple copy spec file <${SPECFILE_PATH}> --> <${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME}>")
+	  CONFIGURE_FILE(
+	    ${SPECFILE_PATH} 
+	    ${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME}
+	    COPYONLY)
+	ELSE ("${SPECFILE_EXT}" STREQUAL ".spec")
+	  # This is a to-be-configured spec file
+	  GET_FILENAME_COMPONENT(SPECFILE_NAME ${SPECFILE_PATH} NAME_WE)
+	  SET(SPECFILE_NAME "${SPECFILE_NAME}.spec")
+	  MESSAGE(STATUS "Configuring spec file <${SPECFILE_PATH}> --> <${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME}>")
+	  CONFIGURE_FILE(
+	    ${SPECFILE_PATH} 
+	    ${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME}
+	    @ONLY)
+	ENDIF ("${SPECFILE_EXT}" STREQUAL ".spec")
+      ENDIF("${ARGV1}" STREQUAL "")
+            
       ADD_CUSTOM_TARGET(${RPMNAME}_srpm
 	COMMAND cpack -G TGZ --config CPackSourceConfig.cmake
 	COMMAND ${CMAKE_COMMAND} -E copy ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar.gz ${RPM_ROOTDIR}/SOURCES    
-	COMMAND ${RPMTools_RPMBUILD_EXECUTABLE} -bs --define=\"_topdir ${RPM_ROOTDIR}\" ${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME} 
+	COMMAND ${RPMTools_RPMBUILD_EXECUTABLE} -bs --define=\"_topdir ${RPM_ROOTDIR}\" --buildroot=${RPM_ROOTDIR}/tmp ${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME} 
 	)
       
       ADD_CUSTOM_TARGET(${RPMNAME}_rpm
 	COMMAND cpack -G TGZ --config CPackSourceConfig.cmake
 	COMMAND ${CMAKE_COMMAND} -E copy ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar.gz ${RPM_ROOTDIR}/SOURCES    
-	COMMAND ${RPMTools_RPMBUILD_EXECUTABLE} -bb --define=\"_topdir ${RPM_ROOTDIR}\" ${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME} 
+	COMMAND ${RPMTools_RPMBUILD_EXECUTABLE} -bb --define=\"_topdir ${RPM_ROOTDIR}\" --buildroot=${RPM_ROOTDIR}/tmp ${RPM_ROOTDIR}/SPECS/${SPECFILE_NAME} 
 	)  
     ENDMACRO(RPMTools_ADD_RPM_TARGETS)
 
@@ -343,4 +172,5 @@ FILE(APPEND ${RPM_ROOTDIR}/SPECS/${RPMNAME}.spec ${RPM_CHANGELOG_FILE_CONTENT} )
     SET(RPMTools FALSE)
   ENDIF (RPMTools_RPMBUILD_FOUND)  
   
+ENDIF (UNIX)
   
