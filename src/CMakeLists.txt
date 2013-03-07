@@ -139,6 +139,9 @@ option(USE_CUNIT "Use Cunit test framework" OFF)
 option(USE_9P "enable 9P support" ON)
 option(USE_9P_RDMA "enable 9P_RDMA support" OFF)
 
+# This option will stop cmake compilation if a requested FSAL could not be built
+option(STRICT_PACKAGE "Enable strict packaging behavior" OFF )
+
 # Compile with "NO_MOUNT_LIST" [Don't use MOUNT PROTOCOL's  client list]
 set(_NO_MOUNT_LIST ON)
 
@@ -152,6 +155,13 @@ ENDIF()
 IF(DEBUG_SYMS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
 ENDIF(DEBUG_SYMS)
+
+IF(PROFILING)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pg")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pg")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+ENDIF(PROFILING)
 
 # Build source locations and parameters
 IF(USE_FSAL_CEPH)
@@ -229,10 +239,6 @@ if(KRB5_FOUND)
   set(_HAVE_GSSAPI ON)
 endif(KRB5_FOUND)
 
-# needed by RPCAL/gssd for some reason
-find_package(Curses)
-find_package(Readline)
-
 find_package(OpenSSL REQUIRED) # md5 needed by  ${CMAKE_THREAD_LIBS_INIT} nfs4 acls (why??)
 set(SYSTEM_LIBRARIES ${SYSTEM_LIBRARIES} ${OPENSSL_LIBRARIES})
 
@@ -246,8 +252,12 @@ if(USE_FSAL_CEPH)
     CEPH_FS
     )
   if(NOT CEPH_FS)
-    message(WARNING "Cannot find CEPH runtime.  Disabling CEPH fsal build")
-    set(USE_FSAL_CEPH OFF)
+    if(STRICT_PACKAGE)
+      message(FATAL_ERROR "STRICT_PACKAGE : Cannot find CEPH runtime.  Disabling CEPH fsal build")
+    else(STRICT_PACKAGE)
+      message(WARNING "Cannot find CEPH runtime.  Disabling CEPH fsal build")
+      set(USE_FSAL_CEPH OFF)
+    endif(STRICT_PACKAGE)
   endif(NOT CEPH_FS)
 endif(USE_FSAL_CEPH)
 
@@ -260,8 +270,12 @@ if(USE_FSAL_LUSTRE)
     )
   check_include_files("unistd.h;lustre/lustre_user.h" HAVE_LUSTRE_USER_H)
   if((NOT HAVE_LUSTREAPI) OR (NOT HAVE_LUSTRE_USER_H))
-    message(WARNING "Cannot find LUSTRE runtime. Disabling LUSTRE fsal build")
-    set(USE_FSAL_LUSTRE OFF)
+   if(STRICT_PACKAGE)
+      message(FATAL_ERROR "STRICT_PACKAGE: Cannot find LUSTRE runtime. Disabling LUSTRE fsal build")
+    else(STRICT_PACKAGE)
+      message(WARNING "Cannot find LUSTRE runtime. Disabling LUSTRE fsal build")
+      set(USE_FSAL_LUSTRE OFF)
+    endif(STRICT_PACKAGE)
   endif((NOT HAVE_LUSTREAPI) OR (NOT HAVE_LUSTRE_USER_H))
 endif(USE_FSAL_LUSTRE)
 
@@ -274,8 +288,12 @@ if(USE_FSAL_LUSTRE AND USE_FSAL_SHOOK)
     )
   check_include_files("unistd.h;attr/xattr.h" HAVE_SHOOK_XATTRS)
   if((NOT HAVE_SHOOK) OR (NOT HAVE_SHOOK_XATTRS))
-    message(WARNING "Cannot find SHOOK runtime. Disabling SHOOK build")
-    set(USE_FSAL_SHOOK OFF)
+   if(STRICT_PACKAGE)
+      message(FATAL_ERROR "STRICT_PACKAGE: Cannot find SHOOK runtime. Disabling SHOOK build")
+    else(STRICT_PACKAGE)
+      message(WARNING "Cannot find SHOOK runtime. Disabling SHOOK build")
+      set(USE_FSAL_SHOOK OFF)
+    endif(STRICT_PACKAGE)
   endif((NOT HAVE_SHOOK) OR (NOT HAVE_SHOOK_XATTRS))
 endif(USE_FSAL_LUSTRE AND USE_FSAL_SHOOK)
 
@@ -288,8 +306,12 @@ if(USE_FSAL_XFS)
     )
   check_include_files("xfs/xfs.h" HAVE_XFS_H)
   if((NOT HAVE_XFS_LIB) OR (NOT HAVE_XFS_H))
-    message(WARNING "Cannot find XFS runtime. Disabling XFS build")
-    set(USE_FSAL_XFS OFF)
+   if(STRICT_PACKAGE)
+      message(FATAL_ERROR "STRICT_PACKAGE: Cannot find XFS runtime. Disabling XFS build")
+    else(STRICT_PACKAGE)
+      message(WARNING "Cannot find XFS runtime. Disabling XFS build")
+      set(USE_FSAL_XFS OFF)
+    endif(STRICT_PACKAGE)
   endif((NOT HAVE_XFS_LIB) OR (NOT HAVE_XFS_H))
 endif(USE_FSAL_XFS)
 
@@ -302,8 +324,12 @@ if(USE_FSAL_ZFS)
     )
   check_include_files("unistd.h;libzfswrap.h" HAVE_LIBZFSWRAP_H)
   if((NOT HAVE_ZFS_LIB) OR (NOT HAVE_LIBZFSWRAP_H))
-    message(WARNING "Cannot find ZFS runtime. Disabling ZFS build")
-    set(USE_FSAL_ZFS OFF)
+   if(STRICT_PACKAGE)
+      message(FATAL_ERROR "STRICT_PACKAGE: Cannot find ZFS runtime. Disabling ZFS build")
+    else(STRICT_PACKAGE)
+      message(WARNING "Cannot find ZFS runtime. Disabling ZFS build")
+      set(USE_FSAL_ZFS OFF)
+    endif(STRICT_PACKAGE)
   endif((NOT HAVE_ZFS_LIB) OR (NOT HAVE_LIBZFSWRAP_H))
 endif(USE_FSAL_ZFS)
 
@@ -332,8 +358,8 @@ endif()
 
 # Find optional libraries/packages
 if(USE_EFENCE)
-  find_package(efence REQUIRED)
-  set(SYSTEM_LIBRARIES ${efence_LIBRARIES} ${SYSTEM_LIBRARIES})
+  find_package(EFence REQUIRED)
+  set(SYSTEM_LIBRARIES ${EFENCE_LIBRARY} ${SYSTEM_LIBRARIES})
 endif(USE_EFENCE)
 
 if(USE_DBUS)
@@ -386,9 +412,23 @@ set(LIBTIRPC_INCLUDE_DIR
 set(LIBTIRPC_LIBRARIES "${PROJECT_BINARY_DIR}/libntirpc/src/libntirpc.a")
 
 # Find misc system libs
+find_library(LIBRT rt)    # extended Pthreads functions
 
-find_library(LIBRT rt)  # extended Pthreads functions
+# We need to have libcap installed
+#find_library(LIBCAP cap)  # Management of Capablilities
+check_library_exists(
+	cap
+	capset
+	""
+	HAVE_LIBCAP 
+	)
+if( HAVE_LIBCAP )
+  message( STATUS "Found libcap" ) 
+else( HAVE_LIBCAP )
+  message( FATAL_ERROR "You need to install libcap to compile Ganesha" )
+endif( HAVE_LIBCAP )
 
+	
 # Roll up required libraries
 
 #Protocols we support
@@ -506,6 +546,7 @@ message(STATUS "USE_DBUS_STATS = ${USE_DBUS_STATS}")
 message(STATUS "USE_NFSIDMAP = ${USE_NFSIDMAP}")
 message(STATUS "ENABLE_ERROR_INJECTION = ${ENABLE_ERROR_INJECTION}")
 message(STATUS "_MSPAC_SUPPORT = ${_MSPAC_SUPPORT}")
+message(STATUS "STRICT_PACKAGE = ${STRICT_PACKAGE}")
 message(STATUS "USE_EFENCE = ${USE_EFENCE}")
 message(STATUS "_NO_TCP_REGISTER = ${_NO_TCP_REGISTER}")
 message(STATUS "_NO_PORTMAPPER = ${_NO_PORTMAPPER}")
@@ -615,6 +656,11 @@ set(_MSPAC_SUPPORT ${_MSPAC_SUPPORT}
    "enable mspac winbind support"
    FORCE)
 
+set(STRICT_PACKAGE ${STRICT_PACKAGE}
+  CACHE BOOL
+   "enable strict packaging behavior"
+   FORCE)
+
 set(USE_9P ${USE_9P}
   CACHE BOOL
    "enable 9P support"
@@ -680,3 +726,14 @@ add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 ########### add a "make srpm" and a "make rpm" ###############
 add_custom_target(rpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_rpm)
 add_custom_target(srpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_srpm)
+
+#### Add cppcheck support #####
+add_custom_target( 
+	cppcheck-xml
+	COMMAND  cppcheck -j12 -v --force --xml --enable=all -I`pwd`/include ${CMAKE_CURRENT_SOURCE_DIR}  2>cppcheck.xml 
+        )
+
+add_custom_target( 
+	cppcheck
+	COMMAND  cppcheck -j12 -v --force --enable=all -I`pwd`/include ${CMAKE_CURRENT_SOURCE_DIR}
+        )
