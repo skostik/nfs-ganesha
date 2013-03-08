@@ -7,10 +7,16 @@ TEST_ERROR=0
 TEST_SKIPPED=0
 TEST_ERR_FILE=/tmp/test_err.$$
 junit=0
+quiet=0
 
 NB_SUCCESS=0
 NB_SKIPPED=0
 NB_ERROR=0
+
+BLACK='\e[0;30m'
+RED='\e[0;31m'
+GREEN='\e[1;32m'
+NORMAL='\e[0;m'
 
 SUMMARY="/tmp/test_summary.$$"
 
@@ -33,7 +39,7 @@ function error
     else
         # in interactive mode, exit at first error
         rm -f $TEST_ERR_FILE
-        exit 1
+        #exit 1
     fi
 }
 
@@ -118,21 +124,27 @@ function run_test
     if [[ -z "$ONLY" || $ONLY = *",$func,"* ||  $ONLY = *",$nonum_func,"*  ]]; then
         cleanup
         error_reset
+        if  [[ $quiet == 0 ]] ; then 
         echo
         echo "======= $func: $descr ======="
+	fi
         test_start=`date "+%s.%N"`
-		if (($junit)); then
-            # write marks in junit log
-			echo "==== $func: $descr ====" >> $TMPXML_PREFIX.stdout
-			echo "==== $func: $descr ====" >> $TMPXML_PREFIX.stderr
-			$func 2>> $TMPXML_PREFIX.stderr >> $TMPXML_PREFIX.stdout
+	if (($junit)); then
+        	# write marks in junit log
+		echo "==== $func: $descr ====" >> $TMPXML_PREFIX.stdout
+		echo "==== $func: $descr ====" >> $TMPXML_PREFIX.stderr
+		$func 2>> $TMPXML_PREFIX.stderr >> $TMPXML_PREFIX.stdout
+        elif (( $quiet )) ; then
+		$func 2>> /tmp/output.$func.stderr >> /tmp/output.$func.stdout 
         else
-            $func
+            $func 
         fi
         test_end=`date "+%s.%N"`
-		dur=`echo "($test_end-$test_start)" | bc -l`
-        echo
-        echo "duration: $dur sec"
+	dur=`echo "($test_end-$test_start)" | bc -l`
+        if  [[ $quiet == 0 ]] ; then 
+        	echo
+        	echo "duration: $dur sec"
+	fi
 
 	if (( $TEST_SKIPPED )); then
 		echo "($func : skipped)" >> $SUMMARY
@@ -142,20 +154,26 @@ function run_test
 		NB_ERROR=$(($NB_ERROR+1))
 		if (( $junit )); then
 			junit_report_failure "thomasthon" "$func: $descr" "$dur" "ERROR"
+                elif (( $quiet )) ; then
+			echo -e "$func : $descr [${RED}FAILED${NORMAL}]"
 		fi
 	else
 		echo "$func : OK" >> $SUMMARY
 		NB_SUCCESS=$(($NB_SUCCESS+1))
 		if (( $junit )); then
 			junit_report_success "thomasthon" "$func: $descr" "$dur"
-                       fi
+		elif (( $quiet )); then
+			echo -e "$func : $descr [${GREEN}  OK  ${NORMAL}]"
+                fi
 	fi
     fi
 }
 
 function cleanup
 {
-    echo "test cleanup..."
+    if  [[ $quiet == 0 ]] ; then
+    	echo "test cleanup..."
+    fi
     # cleaning test dir
     # TODO
 }
@@ -164,10 +182,12 @@ function test_finalize
 {
 	########### Display test summary and generate junit output ########
 
-	echo
-	echo "=============== TEST SUMMARY  ==============="
-	cat $SUMMARY
-	echo "============================================="
+    	if  [[ $quiet == 0 ]] ; then
+		echo
+		echo "=============== TEST SUMMARY  ==============="
+		cat $SUMMARY
+		echo "============================================="
+	fi
 
 	#init xml report
 	if (( $junit )); then
@@ -189,13 +209,14 @@ function test_finalize
 	exit $NB_ERROR
 }
 
-while getopts j o
-do	case "$o" in
-	j)	junit=1;;
-	[?])
-        echo >&2 "Usage: $0 [-j] <test_dir>"
-        echo >&2 "For running a subset of tests:  ONLY=2,5 $0 [-j] <test_dir>"
-		exit 1;;
+while getopts "qj" opt ; do
+	case "$opt" in
+		j)	junit=1;;
+        	q)      quiet=1;;
+		[?])
+        		echo >&2 "Usage: $0 [-j] <test_dir>"
+        		echo >&2 "For running a subset of tests:  ONLY=2,5 $0 [-j] <test_dir>"
+			exit 1;;
 	esac
 done
 shift $(($OPTIND-1))
@@ -228,7 +249,9 @@ if [ -z "$1" ]; then
     exit 1
 else
     TEST_DIR=$1
-    echo "test dir: $TEST_DIR"
+    if  [[ $quiet == 0 ]] ; then
+    	echo "test dir: $TEST_DIR"
+    fi
 fi
 
 
