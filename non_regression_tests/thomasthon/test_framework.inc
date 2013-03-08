@@ -113,7 +113,9 @@ function run_test
     func=$1
     descr=$2
 
-    if [[ -z "$ONLY" || $ONLY = *",$func,"* ]]; then
+    nonum_func=`echo $func | sed -e 's/[a-zA-Z]$//'`
+
+    if [[ -z "$ONLY" || $ONLY = *",$func,"* ||  $ONLY = *",$nonum_func,"*  ]]; then
         cleanup
         error_reset
         echo
@@ -132,23 +134,22 @@ function run_test
         echo
         echo "duration: $dur sec"
 
-		if (( $TEST_SKIPPED )); then
-			echo "($func : skipped)" >> $SUMMARY
-			NB_SKIPPED=$(($NB_SKIPPED+1))
-		elif (( $TEST_ERROR > 0 )); then
-			echo "$func : *FAILED*" >> $SUMMARY
-			NB_ERROR=$(($NB_ERROR+1))
-			if (( $junit )); then
-				junit_report_failure "thomasthon" "$func: $descr" "$dur" "ERROR"
-			fi
-		else
-			echo "$func : OK" >> $SUMMARY
-			NB_SUCCESS=$(($NB_SUCCESS+1))
-			if (( $junit )); then
-				junit_report_success "thomasthon" "$func: $descr" "$dur"
-                        fi
-
+	if (( $TEST_SKIPPED )); then
+		echo "($func : skipped)" >> $SUMMARY
+		NB_SKIPPED=$(($NB_SKIPPED+1))
+	elif (( $TEST_ERROR > 0 )); then
+		echo "$func : *FAILED*" >> $SUMMARY
+		NB_ERROR=$(($NB_ERROR+1))
+		if (( $junit )); then
+			junit_report_failure "thomasthon" "$func: $descr" "$dur" "ERROR"
 		fi
+	else
+		echo "$func : OK" >> $SUMMARY
+		NB_SUCCESS=$(($NB_SUCCESS+1))
+		if (( $junit )); then
+			junit_report_success "thomasthon" "$func: $descr" "$dur"
+                       fi
+	fi
     fi
 }
 

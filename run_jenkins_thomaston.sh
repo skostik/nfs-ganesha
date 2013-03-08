@@ -20,7 +20,7 @@ case $NFS_VERS in
   9P)
     #MOUNT_CMD="mount -t 9P $SERVER:/tmp /mnt" 
     IPADDR=`resolveip -s $SERVER 2>&1` 
-    MOUNT_CMD="mount -t 9p IPADDR /mnt -o uname=root,aname=/tmp,msize=65560,version=9p2000.L,debug-0x0,user=access"
+    MOUNT_CMD="mount -t 9p IPADDR /mnt -o uname=root,aname=/tmp,msize=65560,version=9p2000.L,debug-0x0,user=access,port=564"
     ;;
   *)
     echo "unsupported NFS_VERS $NFS_VERS"
