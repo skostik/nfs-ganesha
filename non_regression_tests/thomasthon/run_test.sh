@@ -4,10 +4,10 @@ CURDIR=`dirname $0`
 # include test framework
 . $CURDIR/test_framework.inc
 
-if [[ -r ./$CURDIR/test_variables.rc ]]  ; then
-   .  ./$CURDIR/test_variables.rc
+if [[ -r ./$CURDIR/run_test.rc ]]  ; then
+   .  ./$CURDIR/run_test.rc
 else
-  echo "  /!\\ Please make test's configuration in  $CURDIR/test_variables.rc"
+  echo "  /!\\ Please make test's configuration in  $CURDIR/run_test.rc"
   exit 1 
 fi
 

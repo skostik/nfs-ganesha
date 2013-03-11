@@ -18,3 +18,9 @@ GIT_CLONE_URL=/opt/GANESHA/.git
 USER=root
 
 ##### Variables to be used by module nfsv41 #####
+
+# path to pynfs repo
+PYNFS_DIR=/opt/pynfs
+
+# Remote URL to be used by PYNFS
+PYNFS_URL="aury62:/vfs/pynfs40"
