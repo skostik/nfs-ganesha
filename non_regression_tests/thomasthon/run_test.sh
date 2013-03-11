@@ -17,12 +17,13 @@ if [[ `id -u` != 0 ]] ; then
   exit 1 
 fi
 
-######################## INCLUDE MODULES HERE ####################
-.  $CURDIR/allfs/testsuite.inc
-
-# syntax: ONLY=2,3 ./run_test.sh [-j] <test_dir>
 
 ######################## DEFINE TEST LIST HERE ####################
 
-run_allfs
+# syntax: ONLY=2,3 ./run_test.sh [-j] <test_dir>
+for m in  $MODULES ; do
+  .  $CURDIR/$MODULES/testsuite.inc
+  RUN_CMD="run_$m"
+  eval $RUN_CMD
+done
 
