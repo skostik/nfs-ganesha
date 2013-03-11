@@ -79,8 +79,8 @@ function create_tree
 
 ############################ TEST FUNCTIONS ############################
 
-### test 1: check that a user can copy 444 file
-function test1
+### allfs1: check that a user can copy 444 file
+function allfs1
 {
     # create user directory
     dir="$TEST_DIR/dir.$USER.$$"
@@ -104,8 +104,8 @@ function test1
     rm -rf $dir
 }
 
-### test 2: check recursive removal of large directories
-function test2
+### allfs2: check recursive removal of large directories
+function allfs2
 {
     dir="$TEST_DIR/dir.$$"
 
@@ -121,8 +121,8 @@ function test2
     rm -r $dir || error "couldn't remove $dir"
 }
 
-### test3b : cthon04's basic tests
-function test3b
+### allfs3b : cthon04's basic tests
+function allfs3b
 {
    dir="$TEST_DIR/dir.$$"
    mkdir -p $dir
@@ -133,8 +133,8 @@ function test3b
    timeout -s KILL 5m ./runtests || error "ERROR while running cthon04's basic tests"
 }
 
-### test3g : cthon04's general tests
-function test3g
+### allfs3g : cthon04's general tests
+function allfs3g
 {
    dir="$TEST_DIR/dir.$$"
    mkdir -p $dir
@@ -146,7 +146,7 @@ function test3g
 }
 
 ### test3s : cthon04's special tests
-function test3s
+function allfs3s
 {
    dir="$TEST_DIR/dir.$$"
    mkdir -p $dir
@@ -157,8 +157,8 @@ function test3s
    timeout -s KILL 5m ./runtests || error "ERROR while running cthon04's special tests"
 }
 
-### test3l : cthon04's lock tests
-function test3l
+### allfs3l : cthon04's lock tests
+function allfs3l
 {
    dir="$TEST_DIR/dir.$$"
    mkdir -p $dir
@@ -169,8 +169,8 @@ function test3l
    timeout -s KILL 5m ./runtests || error "ERROR while running cthon04's lock tests"
 }
 
-### test4g : git clone a local repository
-function test4g
+### allfs4g : git clone a local repository
+function allfs4g
 {
    dir="$TEST_DIR/dir.$$"
    mkdir -p $dir
@@ -186,13 +186,13 @@ function test4g
 
 function run_allfs
 {
-  run_test test1   "copy file with 444 mode     "
-  run_test test2   "rm -rf of wide namespace    "
-  run_test test3b  "cthon04's basic tests       "
-  run_test test3g  "cthon04's general tests     "
-  run_test test3s  "cthon04's special tests     "
-  run_test test3l  "cthon04's lock tests        "
-  run_test test4g  "git clone a local repository"
+  run_test allfs1  " copy file with 444 mode     "
+  run_test allfs2  " rm -rf of wide namespace    "
+  run_test allfs3b  "cthon04's basic tests       "
+  run_test allfs3g  "cthon04's general tests     "
+  run_test allfs3s  "cthon04's special tests     "
+  run_test allfs3l  "cthon04's lock tests        "
+  run_test allfs4g  "git clone a local repository"
 
   # display test summary / generate outputs
 
