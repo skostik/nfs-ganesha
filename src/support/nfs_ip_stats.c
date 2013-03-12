@@ -270,11 +270,6 @@ int nfs_ip_stats_incr(hash_table_t * ht_ip_stats,
         {
           switch (ptr_req->rq_vers)
             {
-            case NFS_V2:
-              g->nb_req_nfs2 += 1;
-              g->req_nfs2[ptr_req->rq_proc] += 1;
-              break;
-
             case NFS_V3:
               g->nb_req_nfs3 += 1;
               g->req_nfs3[ptr_req->rq_proc] += 1;

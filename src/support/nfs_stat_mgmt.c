@@ -132,12 +132,6 @@ void nfs_stat_update(nfs_stat_type_t type,
     {
       switch (preq->rq_vers)
         {
-        case NFS_V2:
-          pitem = &pstat_req->stat_req_nfs2[preq->rq_proc];
-          if(up_counter)
-            pstat_req->nb_nfs2_req += 1;
-          break;
-
         case NFS_V3:
           pitem = &pstat_req->stat_req_nfs3[preq->rq_proc];
           if(up_counter)
