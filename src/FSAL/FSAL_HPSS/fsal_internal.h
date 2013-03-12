@@ -115,7 +115,8 @@ typedef struct
           ATTR_MODE     | ATTR_NUMLINKS | ATTR_OWNER     | \
           ATTR_GROUP    | ATTR_ATIME    | ATTR_CREATION  | \
           ATTR_CTIME    | ATTR_MTIME    | ATTR_SPACEUSED | \
-          ATTR_MOUNTFILEID | ATTR_CHGTIME  )
+          ATTR_MOUNTFILEID | ATTR_CHGTIME | ATTR_ATIME_SERVER | \
+          ATTR_MTIME_SERVER )
 
 
 /* fsal_convert stuff */
