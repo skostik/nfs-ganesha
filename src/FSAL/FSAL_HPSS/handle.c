@@ -939,6 +939,8 @@ static fsal_status_t hpss_readdir(struct fsal_obj_handle *dir_hdl,
       return fsalstat(ERR_FSAL_FAULT, 0);
     }
     memcpy(&cookie, whence->cookie, sizeof(u_signed64));
+  } else {
+    memset(&cookie, 0, sizeof(u_signed64));
   }
   fsal_cookie.size = sizeof(u_signed64);
 
@@ -966,15 +968,6 @@ static fsal_status_t hpss_readdir(struct fsal_obj_handle *dir_hdl,
                               MAX_ENTRIES * sizeof(hpss_dirent_t), /* size of dirent */
                               hpss_specific_initinfo(dir_hdl->export->fsal)->ReturnInconsistentDirent,
                               &end_of_dir, &cookie, dirent);
-
-      if(rc == 0 && hpss_specific_initinfo(dir_hdl->export->fsal)->ReturnInconsistentDirent) {
-        rc = HPSSFSAL_ReaddirHandle(&(dir_obj_hdl->handle->ns_handle), /* dir handle */
-                                cookie,               /* cookie IN */
-                                &ucreds, /* crentials */
-                                MAX_ENTRIES * sizeof(hpss_dirent_t), /* size of dirent */
-                                hpss_specific_initinfo(dir_hdl->export->fsal)->ReturnInconsistentDirent,
-                                &end_of_dir, &cookie, dirent);
-     }
 
      if(rc < 0)
          return fsalstat(hpss2fsal_error(rc), -rc);

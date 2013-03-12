@@ -575,7 +575,7 @@ hpss_dirent_t   *DirentPtr)     /* OUT - directory entry information */
                             &direntbuf);
 
    /* If metadata is wrong, we'll get nothing even if there could be something... Try again */
-   if(direntbuf.DirEntry.DirEntry_len == 0 && IgnInconstitMd) {
+   if((error == HPSS_ENOENT) && IgnInconstitMd) {
      rqstid = API_GetUniqueRequestID();
 
      error = API_core_ReadDir(threadcontext,
