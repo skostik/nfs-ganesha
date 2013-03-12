@@ -1329,7 +1329,7 @@ static void worker_thread_initializer(struct fridgethr_context *ctx)
     = gsh_calloc(sizeof(struct nfs_worker_data), 1);
   char thr_name[32];
 
-  wd->worker_index = atomic_inc_uint32_t(&worker_indexer);
+  wd->worker_index = atomic_inc_uint32_t(&worker_indexer)-1;
   snprintf(thr_name, sizeof(thr_name), "Worker Thread #%u", wd->worker_index);
 
   /**
