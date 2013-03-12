@@ -788,7 +788,8 @@ fsal_status_t fsal2hpss_attribset(struct fsal_obj_handle * p_fsal_handle,
   settable_attrs = (ATTR_SIZE | ATTR_ACL |
                     ATTR_MODE | ATTR_OWNER |
                     ATTR_GROUP | ATTR_ATIME |
-                    ATTR_CTIME | ATTR_MTIME);
+                    ATTR_CTIME | ATTR_MTIME |
+                    ATTR_ATIME_SERVER | ATTR_MTIME_SERVER );
 
   /* If there are unsupported attributes, return ERR_FSAL_ATTRNOTSUPP */
 
@@ -869,6 +870,19 @@ fsal_status_t fsal2hpss_attribset(struct fsal_obj_handle * p_fsal_handle,
       p_hpss_attrs->GID = p_attrib_set->group;
 
     }
+
+  /* if *TIME_SERVER, just fill the regular *TIME with the right value */
+  if(FSAL_TEST_MASK(p_attrib_set->mask, ATTR_ATIME_SERVER))
+    {
+      p_attrib_set->mask |= ATTR_ATIME;
+      clock_gettime(CLOCK_REALTIME, &p_attrib_set->atime);
+    }
+  if(FSAL_TEST_MASK(p_attrib_set->mask, ATTR_MTIME_SERVER))
+    {
+      p_attrib_set->mask |= ATTR_MTIME;
+      clock_gettime(CLOCK_REALTIME, &p_attrib_set->mtime);
+    }
+
 
   if(FSAL_TEST_MASK(p_attrib_set->mask, ATTR_ATIME))
     {
