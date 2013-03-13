@@ -159,8 +159,8 @@ fsal_status_t fsal2hpss_attribset(struct fsal_obj_handle * p_fsal_handle,
                                   hpss_fileattrbits_t * p_hpss_attrmask,
                                   hpss_Attrs_t * p_hpss_attrs);
 
-int fsal2hpss_openflags(fsal_openflags_t fsal_flags, int *p_hpss_flags);
-
+/* check and remove O_SYNC? */
+#define fsal2hpss_openflags(fsal_flags, p_hpss_flags) fsal2posix_openflags(fsal_flags, p_hpss_flags)
 
 
 /* fsal_internal.c */
