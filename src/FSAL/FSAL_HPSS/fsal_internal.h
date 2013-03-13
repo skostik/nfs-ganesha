@@ -115,8 +115,7 @@ typedef struct
           ATTR_MODE     | ATTR_NUMLINKS | ATTR_OWNER     | \
           ATTR_GROUP    | ATTR_ATIME    | ATTR_CREATION  | \
           ATTR_CTIME    | ATTR_MTIME    | ATTR_SPACEUSED | \
-          ATTR_MOUNTFILEID | ATTR_CHGTIME | ATTR_ATIME_SERVER | \
-          ATTR_MTIME_SERVER )
+          ATTR_MOUNTFILEID | ATTR_CHGTIME  )
 
 
 /* fsal_convert stuff */
@@ -159,8 +158,8 @@ fsal_status_t fsal2hpss_attribset(struct fsal_obj_handle * p_fsal_handle,
                                   hpss_fileattrbits_t * p_hpss_attrmask,
                                   hpss_Attrs_t * p_hpss_attrs);
 
-/* check and remove O_SYNC? */
-#define fsal2hpss_openflags(fsal_flags, p_hpss_flags) fsal2posix_openflags(fsal_flags, p_hpss_flags)
+int fsal2hpss_openflags(fsal_openflags_t fsal_flags, int *p_hpss_flags);
+
 
 
 /* fsal_internal.c */
@@ -171,3 +170,10 @@ void HPSSFSAL_BuildCos(uint32_t CosId,
                        hpss_cos_hints_t * hints, hpss_cos_priorities_t * hintpri);
 
 int HPSSFSAL_ucreds_from_opctx(const struct req_op_context *opctx, sec_cred_t *ucreds);
+
+
+
+/* main.c */
+
+struct fsal_staticfsinfo_t *hpss_staticinfo(struct fsal_module *hdl);
+hpssfs_specific_initinfo_t *hpss_specific_initinfo(struct fsal_module *hdl);

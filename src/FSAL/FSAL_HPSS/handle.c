@@ -50,12 +50,12 @@
 /* helpers
  */
 
-/* hpss_alloc_handle
+/* alloc_handle
  * allocate and fill in a handle
  * this uses malloc/free for the time being.
  */
 
-static struct hpss_fsal_obj_handle *hpss_alloc_handle(struct hpss_file_handle *fh,
+static struct hpss_fsal_obj_handle *alloc_handle(struct hpss_file_handle *fh,
                                                 struct attrlist *attr,
                                                 char *link_content,
                                                 struct fsal_export *exp_hdl)
@@ -213,7 +213,7 @@ static fsal_status_t hpss_lookup(struct fsal_obj_handle *parent,      /* IN */
     return status;
 
   /* set output handle */
-  hdl = hpss_alloc_handle(NULL, &fsal_attr, NULL, parent_obj_handle->obj_handle.export);
+  hdl = alloc_handle(NULL, &fsal_attr, NULL, parent_obj_handle->obj_handle.export);
 
   if (hdl == NULL)
     return fsalstat(ERR_FSAL_NOMEM, 0);
@@ -261,7 +261,7 @@ fsal_status_t hpss_lookup_path(struct fsal_export *exp_hdl,
     return status;
 
   /* set output handle */
-  hdl = hpss_alloc_handle(NULL, &fsal_attr, NULL, exp_hdl);
+  hdl = alloc_handle(NULL, &fsal_attr, NULL, exp_hdl);
 
   if (hdl == NULL)
     return fsalstat(ERR_FSAL_NOMEM, 0);
@@ -412,7 +412,7 @@ static fsal_status_t hpss_create( struct fsal_obj_handle *dir_hdl,
 
 
   /* set output handle */
-  hdl = hpss_alloc_handle(NULL, attrib, NULL, dir_hdl->export);
+  hdl = alloc_handle(NULL, attrib, NULL, dir_hdl->export);
 
   if (hdl == NULL)
     return fsalstat(ERR_FSAL_NOMEM, 0);
@@ -531,7 +531,7 @@ static fsal_status_t hpss_mkdir( struct fsal_obj_handle *dir_hdl,
 
 
   /* set output handle   */
-  hdl = hpss_alloc_handle(NULL, attrib, NULL, dir_hdl->export);
+  hdl = alloc_handle(NULL, attrib, NULL, dir_hdl->export);
 
   if (hdl == NULL)
     return fsalstat(ERR_FSAL_NOMEM, 0);
@@ -665,7 +665,7 @@ static fsal_status_t hpss_makesymlink(struct fsal_obj_handle *dir_hdl,
 
 
   /* set output handle */
-  hdl = hpss_alloc_handle(NULL, attrib, NULL, dir_hdl->export);
+  hdl = alloc_handle(NULL, attrib, NULL, dir_hdl->export);
 
   if (hdl == NULL)       
     return fsalstat(ERR_FSAL_NOMEM, 0);
@@ -939,8 +939,6 @@ static fsal_status_t hpss_readdir(struct fsal_obj_handle *dir_hdl,
       return fsalstat(ERR_FSAL_FAULT, 0);
     }
     memcpy(&cookie, whence->cookie, sizeof(u_signed64));
-  } else {
-    memset(&cookie, 0, sizeof(u_signed64));
   }
   fsal_cookie.size = sizeof(u_signed64);
 
@@ -968,6 +966,15 @@ static fsal_status_t hpss_readdir(struct fsal_obj_handle *dir_hdl,
                               MAX_ENTRIES * sizeof(hpss_dirent_t), /* size of dirent */
                               hpss_specific_initinfo(dir_hdl->export->fsal)->ReturnInconsistentDirent,
                               &end_of_dir, &cookie, dirent);
+
+      if(rc == 0 && hpss_specific_initinfo(dir_hdl->export->fsal)->ReturnInconsistentDirent) {
+        rc = HPSSFSAL_ReaddirHandle(&(dir_obj_hdl->handle->ns_handle), /* dir handle */
+                                cookie,               /* cookie IN */
+                                &ucreds, /* crentials */
+                                MAX_ENTRIES * sizeof(hpss_dirent_t), /* size of dirent */
+                                hpss_specific_initinfo(dir_hdl->export->fsal)->ReturnInconsistentDirent,
+                                &end_of_dir, &cookie, dirent);
+     }
 
      if(rc < 0)
          return fsalstat(hpss2fsal_error(rc), -rc);
@@ -1752,7 +1759,7 @@ fsal_status_t hpss_create_handle( struct fsal_export *exp_hdl,
     }
 
   /* set output handle */
-  hdl = hpss_alloc_handle(&fh, &fsal_attr, link_content, exp_hdl);
+  hdl = alloc_handle(&fh, &fsal_attr, link_content, exp_hdl);
 
   if (hdl == NULL)
     return fsalstat(ERR_FSAL_NOMEM, 0);

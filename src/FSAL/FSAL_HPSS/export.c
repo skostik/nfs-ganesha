@@ -39,7 +39,6 @@
 #include "hpss_methods.h"
 #include "FSAL/fsal_commonlib.h"
 #include "FSAL/fsal_config.h"
-#include "nfs_exports.h"
 
 /*
  * VFS internal export
@@ -115,23 +114,22 @@ errout:
  *        ERR_FSAL_IO, ...
  */
 
-static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
-                                           const struct req_op_context *opctx,
-                                           fsal_dynamicfsinfo_t *dynamicinfo)
+static fsal_status_t get_dynamic_info(struct fsal_export *exp_hdl,
+				      const struct req_op_context *opctx,
+				      fsal_dynamicfsinfo_t *dynamicinfo)
 {
+
+  hpss_statfs_t hpss_statfs;
+  unsigned int cos_export;
+  int rc;
+  struct hpss_fsal_export *myself;
+  hpssfsal_export_context_t *exp_context;
 
   /* sanity checks. */
   if( !dynamicinfo || !exp_hdl )
     {
        return fsalstat(ERR_FSAL_FAULT, 0);
     }
-
-#ifdef BUGAZOMU
-  hpss_statfs_t hpss_statfs;
-  unsigned int cos_export;
-  int rc;
-  struct hpss_fsal_export *myself;
-  hpssfsal_export_context_t *exp_context;
 
   myself = container_of(exp_hdl, struct hpss_fsal_export, export);
   exp_context = &myself->export_context;
@@ -149,7 +147,36 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
       ns_FilesetAttrBits_t attrBits;
       ns_FilesetAttrs_t fsattrs;
 
-      memset(&fsattrs, 0, sizeof(ns_FilesetAttrs_t));
+      attrBits = cast64m(0);
+      attrBits = orbit64m(attrBits, NS_FS_ATTRINDEX_COS);
+
+      rc = hpss_FilesetGetAttributes(NULL, NULL,
+                                     &exp_context->fileset_root_handle,
+                                     NULL, attrBits, &fsattrs);
+
+      if(rc)
+        return fsalstat(hpss2fsal_error(rc), -rc);
+
+      cos_export = fsattrs.ClassOfService;
+
+    }
+
+  rc = hpss_Statfs(exp_context->default_cos, &hpss_statfs);
+
+  if(rc)
+    return fsalstat(hpss2fsal_error(rc), -rc);
+
+  /* retrieves the default cos (or the user defined cos for this fileset) */
+  if(exp_context->default_cos != 0)
+    {
+      cos_export = exp_context->default_cos;
+    }
+  else
+    {
+      /* retrieves default fileset cos */
+
+      ns_FilesetAttrBits_t attrBits;
+      ns_FilesetAttrs_t fsattrs;
 
       attrBits = cast64m(0);
       attrBits = orbit64m(attrBits, NS_FS_ATTRINDEX_COS);
@@ -162,10 +189,58 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
         return fsalstat(hpss2fsal_error(rc), -rc);
 
       cos_export = fsattrs.ClassOfService;
-      /* cache it */
-      exp_context->default_cos = cos_export;
 
     }
+
+  rc = hpss_Statfs(cos_export, &hpss_statfs);
+
+  if(rc)
+    return fsalstat(hpss2fsal_error(rc), -rc);
+
+  /* then retrieve info about this cos */
+#ifdef BUGAZOMEU
+  /* retrieves the default cos (or the user defined cos for this fileset) */
+  if(DefaultCosId != 0)
+    {
+      cos_export = DefaultCosId;
+    }
+  else
+    {
+      /* retrieves default fileset cos */
+
+      ns_FilesetAttrBits_t attrBits;
+      ns_FilesetAttrs_t fsattrs;
+      hpss_fileattr_t rootattr;
+      ns_ObjHandle_t fshdl;
+
+      /* recupere la racine */
+
+      rc = HPSSFSAL_GetRoot(&rootattr);
+
+      if(rc)
+        return fsalstat(hpss2fsal_error(rc), -rc);
+
+      fshdl = rootattr.ObjectHandle;
+
+      /* recupere la cos du fileset correspondant */
+
+      attrBits = cast64m(0);
+      attrBits = orbit64m(attrBits, NS_FS_ATTRINDEX_COS);
+
+      rc = hpss_FilesetGetAttributes(NULL, NULL, &fshdl, NULL, attrBits, &fsattrs);
+
+      if(rc)
+        return fsalstat(hpss2fsal_error(rc), -rc);
+
+      cos_export = fsattrs.ClassOfService;
+
+      /* @todo : sometimes NULL ??? */
+      if(cos_export == 0)
+        cos_export = 1;
+
+    }
+
+  /* then retrieve info about this cos */
 
   rc = hpss_Statfs(cos_export, &hpss_statfs);
 
@@ -188,6 +263,10 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
 
   /* return dummy values... like HPSS do... */
 
+/*  dynamicinfo->total_bytes= 1976007601074984ULL;
+  dynamicinfo->free_bytes =   23992398925016ULL;
+  dynamicinfo->avail_bytes=   23992398925016ULL;*/
+
   dynamicinfo->total_bytes = INT_MAX;
   dynamicinfo->free_bytes = INT_MAX;
   dynamicinfo->avail_bytes = INT_MAX;
@@ -204,7 +283,7 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
 
 }
 
-static bool hpss_fs_supports(struct fsal_export *exp_hdl,
+static bool fs_supports(struct fsal_export *exp_hdl,
                         fsal_fsinfo_options_t option)
 {
 	struct fsal_staticfsinfo_t *info;
@@ -213,7 +292,7 @@ static bool hpss_fs_supports(struct fsal_export *exp_hdl,
 	return fsal_supports(info, option);
 }
 
-static uint64_t hpss_fs_maxfilesize(struct fsal_export *exp_hdl)
+static uint64_t fs_maxfilesize(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -221,7 +300,7 @@ static uint64_t hpss_fs_maxfilesize(struct fsal_export *exp_hdl)
 	return fsal_maxfilesize(info);
 }
 
-static uint32_t hpss_fs_maxread(struct fsal_export *exp_hdl)
+static uint32_t fs_maxread(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -229,7 +308,7 @@ static uint32_t hpss_fs_maxread(struct fsal_export *exp_hdl)
 	return fsal_maxread(info);
 }
 
-static uint32_t hpss_fs_maxwrite(struct fsal_export *exp_hdl)
+static uint32_t fs_maxwrite(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -237,7 +316,7 @@ static uint32_t hpss_fs_maxwrite(struct fsal_export *exp_hdl)
 	return fsal_maxwrite(info);
 }
 
-static uint32_t hpss_fs_maxlink(struct fsal_export *exp_hdl)
+static uint32_t fs_maxlink(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -245,7 +324,7 @@ static uint32_t hpss_fs_maxlink(struct fsal_export *exp_hdl)
 	return fsal_maxlink(info);
 }
 
-static uint32_t hpss_fs_maxnamelen(struct fsal_export *exp_hdl)
+static uint32_t fs_maxnamelen(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -253,7 +332,7 @@ static uint32_t hpss_fs_maxnamelen(struct fsal_export *exp_hdl)
 	return fsal_maxnamelen(info);
 }
 
-static uint32_t hpss_fs_maxpathlen(struct fsal_export *exp_hdl)
+static uint32_t fs_maxpathlen(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -261,7 +340,15 @@ static uint32_t hpss_fs_maxpathlen(struct fsal_export *exp_hdl)
 	return fsal_maxpathlen(info);
 }
 
-static struct timespec hpss_fs_lease_time(struct fsal_export *exp_hdl)
+static fsal_fhexptype_t fs_fh_expire_type(struct fsal_export *exp_hdl)
+{
+	struct fsal_staticfsinfo_t *info;
+
+	info = hpss_staticinfo(exp_hdl->fsal);
+	return fsal_fh_expire_type(info);
+}
+
+static struct timespec fs_lease_time(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -269,7 +356,7 @@ static struct timespec hpss_fs_lease_time(struct fsal_export *exp_hdl)
 	return fsal_lease_time(info);
 }
 
-static fsal_aclsupp_t hpss_fs_acl_support(struct fsal_export *exp_hdl)
+static fsal_aclsupp_t fs_acl_support(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -277,7 +364,7 @@ static fsal_aclsupp_t hpss_fs_acl_support(struct fsal_export *exp_hdl)
 	return fsal_acl_support(info);
 }
 
-static attrmask_t hpss_fs_supported_attrs(struct fsal_export *exp_hdl)
+static attrmask_t fs_supported_attrs(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -285,7 +372,7 @@ static attrmask_t hpss_fs_supported_attrs(struct fsal_export *exp_hdl)
 	return fsal_supported_attrs(info);
 }
 
-static uint32_t hpss_fs_umask(struct fsal_export *exp_hdl)
+static uint32_t fs_umask(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -293,7 +380,7 @@ static uint32_t hpss_fs_umask(struct fsal_export *exp_hdl)
 	return fsal_umask(info);
 }
 
-static uint32_t hpss_fs_xattr_access_rights(struct fsal_export *exp_hdl)
+static uint32_t fs_xattr_access_rights(struct fsal_export *exp_hdl)
 {
 	struct fsal_staticfsinfo_t *info;
 
@@ -341,19 +428,20 @@ void hpss_export_ops_init(struct export_ops *ops)
 	ops->lookup_path = hpss_lookup_path; 
 	ops->extract_handle = hpss_extract_handle;
 	ops->create_handle = hpss_create_handle;
-	ops->get_fs_dynamic_info = hpss_get_dynamic_info;
-	ops->fs_supports = hpss_fs_supports;
-	ops->fs_maxfilesize = hpss_fs_maxfilesize;
-	ops->fs_maxread = hpss_fs_maxread;
-	ops->fs_maxwrite = hpss_fs_maxwrite;
-	ops->fs_maxlink = hpss_fs_maxlink;
-	ops->fs_maxnamelen = hpss_fs_maxnamelen;
-	ops->fs_maxpathlen = hpss_fs_maxpathlen;
-	ops->fs_lease_time = hpss_fs_lease_time;
-	ops->fs_acl_support = hpss_fs_acl_support;
-	ops->fs_supported_attrs = hpss_fs_supported_attrs;
-	ops->fs_umask = hpss_fs_umask;
-	ops->fs_xattr_access_rights = hpss_fs_xattr_access_rights;
+	ops->get_fs_dynamic_info = get_dynamic_info;
+	ops->fs_supports = fs_supports;
+	ops->fs_maxfilesize = fs_maxfilesize;
+	ops->fs_maxread = fs_maxread;
+	ops->fs_maxwrite = fs_maxwrite;
+	ops->fs_maxlink = fs_maxlink;
+	ops->fs_maxnamelen = fs_maxnamelen;
+	ops->fs_maxpathlen = fs_maxpathlen;
+	ops->fs_fh_expire_type = fs_fh_expire_type;
+	ops->fs_lease_time = fs_lease_time;
+	ops->fs_acl_support = fs_acl_support;
+	ops->fs_supported_attrs = fs_supported_attrs;
+	ops->fs_umask = fs_umask;
+	ops->fs_xattr_access_rights = fs_xattr_access_rights;
 }
 
 
@@ -367,7 +455,7 @@ void hpss_export_ops_init(struct export_ops *ops)
 fsal_status_t hpss_create_export(struct fsal_module *fsal_hdl,
                                    const char *export_path,
                                    const char *fs_options,
-                                   exportlist_t *exp_entry,
+                                   struct exportlist__ *exp_entry,
                                    struct fsal_module *next_fsal,
                                    const struct fsal_up_vector *up_ops,
                                    struct fsal_export **export)
