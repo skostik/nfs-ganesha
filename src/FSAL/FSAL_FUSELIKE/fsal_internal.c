@@ -38,7 +38,7 @@ fsal_staticfsinfo_t global_fs_info;
           FSAL_ATTR_MOUNTFILEID | FSAL_ATTR_CHGTIME  )
 
 /* filesystem info for your filesystem */
-static fsal_staticfsinfo_t default_hpss_info = {
+static fsal_staticfsinfo_t default_fuselike_info = {
   0xFFFFFFFFFFFFFFFFLL,         /* max file size (64bits) */
   1024,                         /* max links for an object of your filesystem */
   FSAL_MAX_NAME_LEN,            /* max filename */
@@ -261,7 +261,7 @@ fsal_status_t fsal_internal_init_global(fsal_init_info_t * fsal_info,
     }
 
   /* setting default values. */
-  global_fs_info = default_hpss_info;
+  global_fs_info = default_fuselike_info;
 
   /* Analyzing fs_common_info struct */
 
