@@ -681,11 +681,15 @@ static fsal_status_t tank_readdir(struct fsal_obj_handle *dir_hdl,
         creden_t cred ;
         libzfswrap_vfs_t   * p_vfs   = NULL ;
         libzfswrap_vnode_t * pvnode  = NULL ;
-        libzfswrap_entry_t * dirents = NULL ;
+        libzfswrap_entry_t dirents[MAX_ENTRIES];
         unsigned int index  = 0 ;
 
 	if(whence != NULL) {
-		seekloc = (off_t)*whence;
+		if(whence->size != sizeof(off_t)) {
+			retval = EFAULT;
+			goto out;
+		}
+		memcpy(&seekloc, whence->cookie, sizeof(off_t));
 	}
 
 	myself = container_of(dir_hdl, struct zfs_fsal_obj_handle, obj_handle);
@@ -707,13 +711,7 @@ static fsal_status_t tank_readdir(struct fsal_obj_handle *dir_hdl,
                                            &cred,
                                            myself->handle->zfs_handle,
                                            &pvnode ) ) )
-
              goto out;
-
-      
-        if( ( dirents = gsh_malloc( MAX_ENTRIES * sizeof(libzfswrap_entry_t) ) ) == NULL )
-          return fsalstat( ERR_FSAL_NOMEM, 0 ) ;
-
 
         *eof = FALSE ;
         do
