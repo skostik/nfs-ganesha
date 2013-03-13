@@ -23,10 +23,10 @@
 
 /**
  * FSAL_rcp:
- * Copy an HPSS file to/from a local filesystem.
+ * Copy a FUSE file to/from a local filesystem.
  *
  * \param filehandle (input):
- *        Handle of the HPSS file to be copied.
+ *        Handle of the FUSE file to be copied.
  * \param p_context (input):
  *        Authentication context for the operation (user,...).
  * \param p_local_path (input):
