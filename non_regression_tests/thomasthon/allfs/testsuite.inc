@@ -197,7 +197,7 @@ function allfs4s
    rm -rf testln
 
    # Untar the tarball
-   tar xf testln.tar.gz
+   tar xf testln.tar.gz  || error "ERROR while forcing a utimes on symbolic link via tar"
   
 }
 
