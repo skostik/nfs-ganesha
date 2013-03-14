@@ -86,7 +86,7 @@ function allfs1
     dir="$TEST_DIR/dir.$USER.$$"
     file="$dir/test_file"
 
-    mkdir $dir || error "error mkdir $dir"
+    mkdir -p $dir || error "error mkdir $dir"
     chown $USER $dir
 
     # create a file as user in this dir
