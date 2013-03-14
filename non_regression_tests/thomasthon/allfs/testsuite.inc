@@ -180,6 +180,27 @@ function allfs4g
 }
 
 
+### allfs4s : force a utimes on a symlink via a tar 
+function allfs4s
+{
+  
+   dir="$TEST_DIR/dir.$$"
+   mkdir -p $dir
+
+   cd $dir
+
+   # build the tar
+   mkdir testln
+   touch testln/file
+   ln -s file testln/link
+   tar czf testln.tar.gz testln
+   rm -rf testln
+
+   # Untar the tarball
+   tar xf testln.tar.gz
+  
+}
+
 # syntax: ONLY=2,3 ./run_test.sh [-j] <test_dir>
 
 ######################## DEFINE TEST LIST HERE ####################
@@ -193,6 +214,7 @@ function run_allfs
   run_test allfs3s  "cthon04's special tests     "
   run_test allfs3l  "cthon04's lock tests        "
   run_test allfs4g  "git clone a local repository"
+  run_test allfs4s  "Tar calls utimes on symlink "
 
   # display test summary / generate outputs
 
