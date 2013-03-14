@@ -1118,7 +1118,7 @@ static fsal_status_t setattrs(struct fsal_obj_handle *obj_hdl,
 		}
                 if( obj_hdl->type == SYMBOLIC_LINK )
                         retval = 0 ; /* Setting time on a symbolic link is illegal */
-		if(vfs_unopenable_type(obj_hdl->type))
+		else if(vfs_unopenable_type(obj_hdl->type))
                         retval = CRED_WRAP( opctx->creds, int, vfs_utimesat, fd,
 					                                     myself->u.unopenable.name,
 					                                     timebuf, AT_SYMLINK_NOFOLLOW);
