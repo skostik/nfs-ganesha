@@ -1,0 +1,11 @@
+The non-regression test have moved to a dedicated repository.
+Please clone repository "sigmund" hosted by GitHub
+
+	HTTP 
+		git clone http://github.com/phdeniel/sigmund.git
+
+	GIT (read-only)
+		git clone git://github.com/phdeniel/sigmund.git
+		
+	SSH (read-write)
+		git clone git@github.com:phdeniel/sigmund.git
