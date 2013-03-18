@@ -171,10 +171,3 @@ void HPSSFSAL_BuildCos(uint32_t CosId,
                        hpss_cos_hints_t * hints, hpss_cos_priorities_t * hintpri);
 
 int HPSSFSAL_ucreds_from_opctx(const struct req_op_context *opctx, sec_cred_t *ucreds);
-
-
-
-/* main.c */
-
-struct fsal_staticfsinfo_t *hpss_staticinfo(struct fsal_module *hdl);
-hpssfs_specific_initinfo_t *hpss_specific_initinfo(struct fsal_module *hdl);
