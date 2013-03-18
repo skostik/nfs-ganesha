@@ -39,6 +39,7 @@
 #include "hpss_methods.h"
 #include "FSAL/fsal_commonlib.h"
 #include "FSAL/fsal_config.h"
+#include "nfs_exports.h"
 
 /*
  * VFS internal export
@@ -375,7 +376,7 @@ void hpss_export_ops_init(struct export_ops *ops)
 fsal_status_t hpss_create_export(struct fsal_module *fsal_hdl,
                                    const char *export_path,
                                    const char *fs_options,
-                                   struct exportlist__ *exp_entry,
+                                   exportlist_t *exp_entry,
                                    struct fsal_module *next_fsal,
                                    const struct fsal_up_vector *up_ops,
                                    struct fsal_export **export)
