@@ -786,7 +786,7 @@ fsal_status_t fsal2hpss_attribset(struct fsal_obj_handle * p_fsal_handle,
 
   /* Settable attrs. */
 
-  settable_attrs = (ATTR_SIZE | ATTR_ACL |
+  settable_attrs = (ATTR_SIZE | ATTR_SPACEUSED | ATTR_ACL |
                     ATTR_MODE | ATTR_OWNER |
                     ATTR_GROUP | ATTR_ATIME |
                     ATTR_CTIME | ATTR_MTIME |
