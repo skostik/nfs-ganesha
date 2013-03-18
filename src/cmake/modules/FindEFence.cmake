@@ -1,0 +1,10 @@
+##
+## Electric Fence cmake find module.
+##
+FIND_LIBRARY(EFENCE_LIBRARY libefence.so PATHS /usr/lib /usr/local/lib)
+
+IF(EFENCE_LIBRARY)
+	SET(EFENCE_FOUND TRUE)
+ELSE(EFENCE_LIBRARY)
+	SET(EFENCE_FOUND FALSE)
+ENDIF(EFENCE_LIBRARY)
