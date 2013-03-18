@@ -112,7 +112,7 @@ int _9p_rename( _9p_request_data_t * preq9p,
   LogDebug( COMPONENT_9P, "RRENAMEAT: tag=%u fid=%u dfid=%u newname=%.*s",
             (u32)*msgtag, *fid, *dfid, *name_len, name_str ) ;
 
-   _9p_stat_update( *pmsgtype, TRUE, &pwkrdata->stats._9p_stat_req ) ;
+  //  _9p_stat_update( *pmsgtype, TRUE, &pwkrdata->stats._9p_stat_req ) ;
   return 1 ;
 }
 
