@@ -198,7 +198,7 @@ int _9p_setattr( _9p_request_data_t * preq9p,
             (u32)*msgtag, *fid,  *valid, *mode, *uid, *gid, *size,  (unsigned long long)*atime_sec, (unsigned long long)*atime_nsec, 
             (unsigned long long)*mtime_sec, (unsigned long long)*mtime_nsec  ) ;
 
-  _9p_stat_update( *pmsgtype, TRUE, &pwkrdata->stats._9p_stat_req ) ;
+  //_9p_stat_update( *pmsgtype, TRUE, &pwkrdata->stats._9p_stat_req ) ;
   return 1 ;
 }
 
