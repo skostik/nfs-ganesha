@@ -156,6 +156,13 @@ IF(DEBUG_SYMS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g")
 ENDIF(DEBUG_SYMS)
 
+IF(PROFILING)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -pg")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+    set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -pg")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+ENDIF(PROFILING)
+
 # Build source locations and parameters
 IF(USE_FSAL_CEPH)
   IF(CEPH_PREFIX)
@@ -351,8 +358,8 @@ endif()
 
 # Find optional libraries/packages
 if(USE_EFENCE)
-  find_package(efence REQUIRED)
-  set(SYSTEM_LIBRARIES ${efence_LIBRARIES} ${SYSTEM_LIBRARIES})
+  find_package(EFence REQUIRED)
+  set(SYSTEM_LIBRARIES ${EFENCE_LIBRARY} ${SYSTEM_LIBRARIES})
 endif(USE_EFENCE)
 
 if(USE_DBUS)
