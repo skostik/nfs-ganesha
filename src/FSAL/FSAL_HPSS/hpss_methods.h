@@ -19,6 +19,12 @@ fsal_status_t hpss_create_handle(struct fsal_export *exp_hdl,
 				struct gsh_buffdesc *hdl_desc,
 				struct fsal_obj_handle **handle);
 
+/* methods from main needed in handle
+ */
+
+struct fsal_staticfsinfo_t *hpss_staticinfo(struct fsal_module *hdl);
+hpssfs_specific_initinfo_t *hpss_specific_initinfo(struct fsal_module *hdl);
+
 /*
  * VFS internal object handle
  * handle is a pointer because
