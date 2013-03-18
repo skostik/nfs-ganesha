@@ -119,17 +119,18 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
                                            fsal_dynamicfsinfo_t *dynamicinfo)
 {
 
-  hpss_statfs_t hpss_statfs;
-  unsigned int cos_export;
-  int rc;
-  struct hpss_fsal_export *myself;
-  hpssfsal_export_context_t *exp_context;
-
   /* sanity checks. */
   if( !dynamicinfo || !exp_hdl )
     {
        return fsalstat(ERR_FSAL_FAULT, 0);
     }
+
+#ifdef BUGAZOMU
+  hpss_statfs_t hpss_statfs;
+  unsigned int cos_export;
+  int rc;
+  struct hpss_fsal_export *myself;
+  hpssfsal_export_context_t *exp_context;
 
   myself = container_of(exp_hdl, struct hpss_fsal_export, export);
   exp_context = &myself->export_context;
@@ -147,36 +148,7 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
       ns_FilesetAttrBits_t attrBits;
       ns_FilesetAttrs_t fsattrs;
 
-      attrBits = cast64m(0);
-      attrBits = orbit64m(attrBits, NS_FS_ATTRINDEX_COS);
-
-      rc = hpss_FilesetGetAttributes(NULL, NULL,
-                                     &exp_context->fileset_root_handle,
-                                     NULL, attrBits, &fsattrs);
-
-      if(rc)
-        return fsalstat(hpss2fsal_error(rc), -rc);
-
-      cos_export = fsattrs.ClassOfService;
-
-    }
-
-  rc = hpss_Statfs(exp_context->default_cos, &hpss_statfs);
-
-  if(rc)
-    return fsalstat(hpss2fsal_error(rc), -rc);
-
-  /* retrieves the default cos (or the user defined cos for this fileset) */
-  if(exp_context->default_cos != 0)
-    {
-      cos_export = exp_context->default_cos;
-    }
-  else
-    {
-      /* retrieves default fileset cos */
-
-      ns_FilesetAttrBits_t attrBits;
-      ns_FilesetAttrs_t fsattrs;
+      memset(&fsattrs, 0, sizeof(ns_FilesetAttrs_t));
 
       attrBits = cast64m(0);
       attrBits = orbit64m(attrBits, NS_FS_ATTRINDEX_COS);
@@ -189,58 +161,10 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
         return fsalstat(hpss2fsal_error(rc), -rc);
 
       cos_export = fsattrs.ClassOfService;
+      /* cache it */
+      exp_context->default_cos = cos_export;
 
     }
-
-  rc = hpss_Statfs(cos_export, &hpss_statfs);
-
-  if(rc)
-    return fsalstat(hpss2fsal_error(rc), -rc);
-
-  /* then retrieve info about this cos */
-#ifdef BUGAZOMEU
-  /* retrieves the default cos (or the user defined cos for this fileset) */
-  if(DefaultCosId != 0)
-    {
-      cos_export = DefaultCosId;
-    }
-  else
-    {
-      /* retrieves default fileset cos */
-
-      ns_FilesetAttrBits_t attrBits;
-      ns_FilesetAttrs_t fsattrs;
-      hpss_fileattr_t rootattr;
-      ns_ObjHandle_t fshdl;
-
-      /* recupere la racine */
-
-      rc = HPSSFSAL_GetRoot(&rootattr);
-
-      if(rc)
-        return fsalstat(hpss2fsal_error(rc), -rc);
-
-      fshdl = rootattr.ObjectHandle;
-
-      /* recupere la cos du fileset correspondant */
-
-      attrBits = cast64m(0);
-      attrBits = orbit64m(attrBits, NS_FS_ATTRINDEX_COS);
-
-      rc = hpss_FilesetGetAttributes(NULL, NULL, &fshdl, NULL, attrBits, &fsattrs);
-
-      if(rc)
-        return fsalstat(hpss2fsal_error(rc), -rc);
-
-      cos_export = fsattrs.ClassOfService;
-
-      /* @todo : sometimes NULL ??? */
-      if(cos_export == 0)
-        cos_export = 1;
-
-    }
-
-  /* then retrieve info about this cos */
 
   rc = hpss_Statfs(cos_export, &hpss_statfs);
 
@@ -262,10 +186,6 @@ static fsal_status_t hpss_get_dynamic_info(struct fsal_export *exp_hdl,
 #else
 
   /* return dummy values... like HPSS do... */
-
-/*  dynamicinfo->total_bytes= 1976007601074984ULL;
-  dynamicinfo->free_bytes =   23992398925016ULL;
-  dynamicinfo->avail_bytes=   23992398925016ULL;*/
 
   dynamicinfo->total_bytes = INT_MAX;
   dynamicinfo->free_bytes = INT_MAX;
