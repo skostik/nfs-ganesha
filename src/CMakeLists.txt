@@ -34,9 +34,23 @@ IF(RPMTools_FOUND)
      RPMTools_ADD_RPM_TARGETS(${PROJECT_NAME})
 ENDIF(RPMTools_FOUND)
 
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC _GIT_HEAD_COMMIT)
-git_describe(_GIT_DESCRIBE)
+# If we are in a git tree, then this CMakeLists.txt is in "src/" and go .git is in "src/.."
+IF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
+  message( STATUS "Compilation from within a git repository. Using GetGitRevisionDescription" )
+  include(GetGitRevisionDescription)
+  get_git_head_revision(GIT_REFSPEC _GIT_HEAD_COMMIT)
+  git_describe(_GIT_DESCRIBE)
+  # Now saves information in .data_from_git so that they can be used
+  # if compilation occurred outside a git repository
+  FILE( WRITE ${CMAKE_BINARY_DIR}/.refspec_from_git "${GIT_REFSPEC}" )
+  FILE( WRITE ${CMAKE_BINARY_DIR}/.head_from_git "${_GIT_HEAD_COMMIT}" )
+  FILE( WRITE ${CMAKE_BINARY_DIR}/.describe_from_git "${_GIT_DESCRIBE}" )
+ELSE( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
+  message( STATUS "Outside a git repository, use saved data" )
+  EXEC_PROGRAM(cat ARGS ${CMAKE_SOURCE_DIR}/.refspec_from_git  OUTPUT_VARIABLE GIT_REFSPEC)
+  EXEC_PROGRAM(cat ARGS ${CMAKE_SOURCE_DIR}/.head_from_git     OUTPUT_VARIABLE _GIT_HEAD_COMMIT)
+  EXEC_PROGRAM(cat ARGS ${CMAKE_SOURCE_DIR}/.describe_from_git OUTPUT_VARIABLE _GIT_DESCRIBE)
+ENDIF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
 
 # find out which platform we are building on
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -584,6 +598,10 @@ message(STATUS "CEPH_PREFIX = ${CEPH_PREFIX}")
 message(STATUS "HPSS_PREFIX = ${HPSS_PREFIX}")
 message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
 message(STATUS "ALLOCATOR = ${ALLOCATOR}")
+message(STATUS "GIT_REFSPEC = ${GIT_REFSPEC}")
+message(STATUS "_GIT_HEAD_COMMIT = ${_GIT_HEAD_COMMIT}")
+message(STATUS "_GIT_DESCRIBE = ${_GIT_DESCRIBE}")
+
 
 #force command line options to be stored in cache
 set(USE_FSAL_VFS ${USE_FSAL_VFS}
