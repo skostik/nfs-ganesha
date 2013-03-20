@@ -34,22 +34,33 @@ IF(RPMTools_FOUND)
      RPMTools_ADD_RPM_TARGETS(${PROJECT_NAME})
 ENDIF(RPMTools_FOUND)
 
+SET( HEAD_FROM_GIT  /tmp/.ganesha_head_from_git  )
+SET( DESCRIBE_FROM_GIT  /tmp/.ganesha_describe_from_git  )
 # If we are in a git tree, then this CMakeLists.txt is in "src/" and go .git is in "src/.."
 IF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
   message( STATUS "Compilation from within a git repository. Using GetGitRevisionDescription" )
   include(GetGitRevisionDescription)
   get_git_head_revision(GIT_REFSPEC _GIT_HEAD_COMMIT)
   git_describe(_GIT_DESCRIBE)
-  # Now saves information in .data_from_git so that they can be used
-  # if compilation occurred outside a git repository
-  FILE( WRITE ${CMAKE_BINARY_DIR}/.refspec_from_git "${GIT_REFSPEC}" )
-  FILE( WRITE ${CMAKE_BINARY_DIR}/.head_from_git "${_GIT_HEAD_COMMIT}" )
-  FILE( WRITE ${CMAKE_BINARY_DIR}/.describe_from_git "${_GIT_DESCRIBE}" )
+
+  FILE( WRITE ${HEAD_FROM_GIT}     "${_GIT_HEAD_COMMIT}" )
+  FILE( WRITE ${DESCRIBE_FROM_GIT} "${_GIT_DESCRIBE}" )
+
 ELSE( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
   message( STATUS "Outside a git repository, use saved data" )
-  EXEC_PROGRAM(cat ARGS ${CMAKE_SOURCE_DIR}/.refspec_from_git  OUTPUT_VARIABLE GIT_REFSPEC)
-  EXEC_PROGRAM(cat ARGS ${CMAKE_SOURCE_DIR}/.head_from_git     OUTPUT_VARIABLE _GIT_HEAD_COMMIT)
-  EXEC_PROGRAM(cat ARGS ${CMAKE_SOURCE_DIR}/.describe_from_git OUTPUT_VARIABLE _GIT_DESCRIBE)
+
+  IF( EXISTS ${HEAD_FROM_GIT} )
+    FILE( READ "${HEAD_FROM_GIT}" _GIT_HEAD_COMMIT )
+  ELSE( EXISTS ${HEAD_FROM_GIT} )
+    set( _GIT_HEAD_COMMIT "NO-GIT-DATA" )
+  ENDIF( EXISTS ${HEAD_FROM_GIT} )
+
+  IF( EXISTS ${DESCRIBE_FROM_GIT} )
+    FILE( READ "${DESCRIBE_FROM_GIT}" _GIT_DESCRIBE )
+  ELSE( EXISTS ${DESCRIBE_FROM_GIT} )
+    set( _GIT_DESCRIBE "NO-GIT-DATA" )
+  ENDIF( EXISTS ${DESCRIBE_FROM_GIT} )
+
 ENDIF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
 
 # find out which platform we are building on
@@ -607,7 +618,6 @@ message(STATUS "CEPH_PREFIX = ${CEPH_PREFIX}")
 message(STATUS "HPSS_PREFIX = ${HPSS_PREFIX}")
 message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
 message(STATUS "ALLOCATOR = ${ALLOCATOR}")
-message(STATUS "GIT_REFSPEC = ${GIT_REFSPEC}")
 message(STATUS "_GIT_HEAD_COMMIT = ${_GIT_HEAD_COMMIT}")
 message(STATUS "_GIT_DESCRIBE = ${_GIT_DESCRIBE}")
 
