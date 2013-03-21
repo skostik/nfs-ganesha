@@ -1,1 +1,1 @@
-../../../libsolcompat/include/sys/int_types.h
+#include <inttypes.h>
