@@ -538,11 +538,13 @@ int nfs4_Is_Fh_Referral(nfs_fh4 * pfh)
 
   pfhandle4 = (file_handle_v4_t *) (pfh->nfs_fh4_val);
 
+#if 0
   /* Referrals are fh whose pseudofs_id is set without pseudofs_flag set */
   if(pfhandle4->refid > 0)
     {
       return true;
     }
+#endif
 
   return false;
 }                               /* nfs4_Is_Fh_Referral */
