@@ -146,6 +146,9 @@ void * _9p_socket_thread( void * Arg )
   /* Init the _9p_conn_t structure */
   _9p_conn.trans_type = _9P_TCP ;
   _9p_conn.trans_data.sockfd = tcp_sock ;
+
+  memset( (char *)_9p_conn.fids, 0, _9P_FID_PER_CONN*sizeof( _9p_fid_t ) ) ;
+
   for (i = 0; i < FLUSH_BUCKETS; i++) {
           pthread_mutex_init(&_9p_conn.flush_buckets[i].lock, NULL);
           init_glist(&_9p_conn.flush_buckets[i].list);
@@ -169,10 +172,10 @@ void * _9p_socket_thread( void * Arg )
    {
      snprintf(strcaller, MAXNAMLEN, "0x%x=%d.%d.%d.%d",
               ntohl(addrpeer.sin_addr.s_addr),
-             (ntohl(addrpeer.sin_addr.s_addr) & 0xFF000000) >> 24,
-             (ntohl(addrpeer.sin_addr.s_addr) & 0x00FF0000) >> 16,
-             (ntohl(addrpeer.sin_addr.s_addr) & 0x0000FF00) >> 8,
-             (ntohl(addrpeer.sin_addr.s_addr) & 0x000000FF));
+              (ntohl(addrpeer.sin_addr.s_addr) & 0xFF000000) >> 24,
+              (ntohl(addrpeer.sin_addr.s_addr) & 0x00FF0000) >> 16,
+              (ntohl(addrpeer.sin_addr.s_addr) & 0x0000FF00) >> 8,
+              (ntohl(addrpeer.sin_addr.s_addr) & 0x000000FF));
 
      LogEvent( COMPONENT_9P, "9p socket #%ld is connected to %s", tcp_sock, strcaller ) ; 
    }
