@@ -684,13 +684,7 @@ static fsal_status_t tank_readdir(struct fsal_obj_handle *dir_hdl,
         libzfswrap_entry_t dirents[MAX_ENTRIES];
         unsigned int index  = 0 ;
 
-	if(whence != NULL) {
-		if(whence->size != sizeof(off_t)) {
-			retval = EFAULT;
-			goto out;
-		}
-		memcpy(&seekloc, whence->cookie, sizeof(off_t));
-	}
+	seekloc = (off_t)*whence;
 
 	myself = container_of(dir_hdl, struct zfs_fsal_obj_handle, obj_handle);
 
