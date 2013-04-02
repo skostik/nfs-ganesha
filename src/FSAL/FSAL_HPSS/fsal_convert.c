@@ -701,7 +701,7 @@ fsal_status_t hpssHandle2fsalAttributes(ns_ObjHandle_t * p_hpsshandle_in,
     return fsalstat(ERR_FSAL_FAULT, 0);
 
   /* check that asked attributes are available */
-  avail_attr = (ATTR_SUPPATTR | ATTR_TYPE | ATTR_FILEID);
+  avail_attr = (ATTR_TYPE | ATTR_FILEID);
 
   unavail_attr = (p_fsalattr_out->mask) & (~avail_attr);
   if(unavail_attr)
