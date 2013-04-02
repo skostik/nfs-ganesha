@@ -22,7 +22,7 @@
 #include <hpss_mech.h>
 #include <hpss_String.h>
 
-#include "hpssclapiext.h"
+#include "HPSSclapiExt/hpssclapiext.h"
 
 /* -------------------------------------------
  *      HPSS dependant definitions
