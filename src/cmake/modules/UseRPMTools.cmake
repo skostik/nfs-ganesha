@@ -160,7 +160,8 @@ ELSE( USE_FSAL_ZFS )
    FILE(APPEND ${RPMBULILD_CMAKE} "set(USE_FSAL_ZFS OFF)
 " ) 
 ENDIF( USE_FSAL_ZFS )
-
+FILE(APPEND ${RPMBULILD_CMAKE} "set(DISTNAME_HAS_GIT_DATA ON)
+")
 
 
       # Read RPM changelog and store the result into a variable
@@ -182,7 +183,8 @@ Url:            ${RPM_URL}
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 
-%define srcdirname %{name}-%{version}-Source
+#%define srcdirname %{name}-%{version}-Source
+%define srcdirname %{name}${PACKNAME}-%{version}-Source
 
 %description
 ${RPMNAME} : ${RPM_DESCRIPTION}
@@ -304,7 +306,7 @@ cd ..
 rm -rf build_tree
 mkdir build_tree
 cd build_tree
-cmake -DCMAKE_INSTALL_PREFIX=$RPM_BUILD_ROOT/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_CONFIG=rpmbuild ../%{srcdirname}
+cmake -DCMAKE_INSTALL_PREFIX=$RPM_BUILD_ROOT/usr -DCMAKE_BUILD_TYPE=Debug -DBUILD_CONFIG=rpmbuild -DDISTNAME_HAS_GIT_DATA=ON ../%{srcdirname}
 make
   
 %install 

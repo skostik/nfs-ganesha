@@ -1,5 +1,5 @@
 # A few CPack related variables
-set(CPACK_PACKAGE_NAME "nfs-ganesha")
+set(CPACK_PACKAGE_NAME "nfs-ganesha${PACKNAME}" )
 set(CPACK_PACKAGE_VENDOR "NFS-Ganesha Project")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "NFS-Ganesha - A NFS Server runnning in user space")
 set(CPACK_PACKAGE_VERSION_MAJOR ${${PROJECT_NAME}_MAJOR_VERSION})

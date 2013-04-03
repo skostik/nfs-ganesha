@@ -18,24 +18,6 @@ set(VERSION_COMMENT
   "GANESHA 64 bits compliant. FSAL_PROXY re-exports NFSv3. RPCSEC_GSS support (partial). FUSELIKE added"
 )
 
-# Define CPACK component (to deal with sub packages)
-set(CPACK_COMPONENTS_ALL daemon fsal headers )
-set(CPACK_COMPONENT_DAEMON_DISPLAY_NAME "NFS-Ganesha daemon")
-set(CPACK_COMPONENT_FSAL_DISPLAY_NAME "FSAL Libraries")
-set(CPACK_COMPONENT_HEADERS_DISPLAY_NAME "Headers")
-
-# Include custom config and cpack module
-include(${CMAKE_SOURCE_DIR}/cmake/cpack_config.cmake)
-include(CPack)
-
-include(${CMAKE_SOURCE_DIR}/cmake/rpmtools_config.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/modules/UseRPMTools.cmake)
-IF(RPMTools_FOUND)
-     RPMTools_ADD_RPM_TARGETS(${PROJECT_NAME})
-ENDIF(RPMTools_FOUND)
-
-SET( HEAD_FROM_GIT  /tmp/.ganesha_head_from_git  )
-SET( DESCRIBE_FROM_GIT  /tmp/.ganesha_describe_from_git  )
 # If we are in a git tree, then this CMakeLists.txt is in "src/" and go .git is in "src/.."
 IF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
   message( STATUS "Compilation from within a git repository. Using GetGitRevisionDescription" )
@@ -43,25 +25,39 @@ IF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
   get_git_head_revision(GIT_REFSPEC _GIT_HEAD_COMMIT)
   git_describe(_GIT_DESCRIBE)
 
-  FILE( WRITE ${HEAD_FROM_GIT}     "${_GIT_HEAD_COMMIT}" )
-  FILE( WRITE ${DESCRIBE_FROM_GIT} "${_GIT_DESCRIBE}" )
-
 ELSE( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
   message( STATUS "Outside a git repository, use saved data" )
+  EXEC_PROGRAM(${CMAKE_SOURCE_DIR}/cmake/githead_from_path.sh ARGS ${CMAKE_SOURCE_DIR}
+                OUTPUT_VARIABLE  _GIT_HEAD_COMMIT)
 
-  IF( EXISTS ${HEAD_FROM_GIT} )
-    FILE( READ "${HEAD_FROM_GIT}" _GIT_HEAD_COMMIT )
-  ELSE( EXISTS ${HEAD_FROM_GIT} )
-    set( _GIT_HEAD_COMMIT "NO-GIT-DATA" )
-  ENDIF( EXISTS ${HEAD_FROM_GIT} )
-
-  IF( EXISTS ${DESCRIBE_FROM_GIT} )
-    FILE( READ "${DESCRIBE_FROM_GIT}" _GIT_DESCRIBE )
-  ELSE( EXISTS ${DESCRIBE_FROM_GIT} )
-    set( _GIT_DESCRIBE "NO-GIT-DATA" )
-  ENDIF( EXISTS ${DESCRIBE_FROM_GIT} )
+   
+  EXEC_PROGRAM(${CMAKE_SOURCE_DIR}/cmake/gitdesc_from_path.sh ARGS ${CMAKE_SOURCE_DIR}
+                OUTPUT_VARIABLE  _GIT_DESCRIBE)
 
 ENDIF( EXISTS ${CMAKE_SOURCE_DIR}/../.git/HEAD  )
+
+# Using git related information, build PACKNAME
+IF(DISTNAME_HAS_GIT_DATA)
+	set( PACKNAME "_git${_GIT_HEAD_COMMIT}_desc_${_GIT_DESCRIBE}" )
+ELSE(DISTNAME_HAS_GIT_DATA)
+	set( PACKNAME "" ) 
+ENDIF(DISTNAME_HAS_GIT_DATA)
+
+# Include custom config and cpack module
+include(${CMAKE_SOURCE_DIR}/cmake/cpack_config.cmake)
+include(CPack)
+
+# Define CPACK component (to deal with sub packages)
+set(CPACK_COMPONENTS_ALL daemon fsal headers )
+set(CPACK_COMPONENT_DAEMON_DISPLAY_NAME "NFS-Ganesha daemon")
+set(CPACK_COMPONENT_FSAL_DISPLAY_NAME "FSAL Libraries")
+set(CPACK_COMPONENT_HEADERS_DISPLAY_NAME "Headers")
+
+include(${CMAKE_SOURCE_DIR}/cmake/rpmtools_config.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/modules/UseRPMTools.cmake)
+IF(RPMTools_FOUND)
+     RPMTools_ADD_RPM_TARGETS(${PROJECT_NAME})
+ENDIF(RPMTools_FOUND)
 
 # find out which platform we are building on
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -167,6 +163,8 @@ option(USE_9P_RDMA "enable 9P_RDMA support" OFF)
 # This option will stop cmake compilation if a requested FSAL could not be built
 option(STRICT_PACKAGE "Enable strict packaging behavior" OFF )
 
+# This option will trigger "long distro name" aka name that contains git information
+option(DISTNAME_HAS_GIT_DATA "Distribution package's name carries git data" OFF )
 # Compile with "NO_MOUNT_LIST" [Don't use MOUNT PROTOCOL's  client list]
 set(_NO_MOUNT_LIST ON)
 
@@ -567,7 +565,7 @@ add_subdirectory(FSAL)
 add_subdirectory(IdMapper)
 
 add_subdirectory(MainNFSD)
-add_subdirectory(Docs)
+##add_subdirectory(Docs)  ## No CmakeLists.txt in this directory
 add_subdirectory(tools)
 
 if(USE_FSAL_FUSE)
@@ -598,6 +596,7 @@ message(STATUS "USE_NFSIDMAP = ${USE_NFSIDMAP}")
 message(STATUS "ENABLE_ERROR_INJECTION = ${ENABLE_ERROR_INJECTION}")
 message(STATUS "_MSPAC_SUPPORT = ${_MSPAC_SUPPORT}")
 message(STATUS "STRICT_PACKAGE = ${STRICT_PACKAGE}")
+message(STATUS "DISTNAME_HAS_GIT_DATA = ${DISTNAME_HAS_GIT_DATA}" )
 message(STATUS "USE_EFENCE = ${USE_EFENCE}")
 message(STATUS "_NO_TCP_REGISTER = ${_NO_TCP_REGISTER}")
 message(STATUS "_NO_PORTMAPPER = ${_NO_PORTMAPPER}")
@@ -716,6 +715,11 @@ set(STRICT_PACKAGE ${STRICT_PACKAGE}
    "enable strict packaging behavior"
    FORCE)
 
+set( DISTNAME_HAS_GIT_DATA ${DISTNAME_HAS_GIT_DATA} 
+  CACHE BOOL
+  "Distribution package's name carries git data" 
+  FORCE)
+
 set(USE_9P ${USE_9P}
   CACHE BOOL
    "enable 9P support"
@@ -779,8 +783,19 @@ endif(USE_FSAL_FUSE)
 add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 
 ########### add a "make srpm" and a "make rpm" ###############
-add_custom_target(rpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_rpm)
-add_custom_target(srpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_srpm)
+IF( DISTNAME_HAS_GIT_DATA )
+  add_custom_target(rpm COMMAND ${CMAKE_MAKE_PROGRAM}  ${PROJECT_NAME}_rpm )
+  add_custom_target(srpm COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_srpm)
+ELSE( DISTNAME_HAS_GIT_DATA )
+  # I need DISTNAME_HAS_GIT_DATA set to ON to carry git data, so I set it, build rpm and set the option back to OFF
+  add_custom_target(rpm COMMAND ${CMAKE_COMMAND} -DDISTNAME_HAS_GIT_DATA=ON  ${CMAKE_SOURCE_DIR} 
+			COMMAND ${CMAKE_MAKE_PROGRAM}  ${PROJECT_NAME}_rpm 
+			COMMAND ${CMAKE_COMMAND} -DDISTNAME_HAS_GIT_DATA=OFF  ${CMAKE_SOURCE_DIR} )
+
+  add_custom_target(srpm  COMMAND ${CMAKE_COMMAND} -DDISTNAME_HAS_GIT_DATA=ON  ${CMAKE_SOURCE_DIR} 
+                          COMMAND ${CMAKE_MAKE_PROGRAM} ${PROJECT_NAME}_srpm
+			  COMMAND ${CMAKE_COMMAND} -DDISTNAME_HAS_GIT_DATA=OFF ${CMAKE_SOURCE_DIR}  )
+ENDIF( DISTNAME_HAS_GIT_DATA )
 
 ########### add a "make doc" target to call Doxygen
 find_package(Doxygen)
