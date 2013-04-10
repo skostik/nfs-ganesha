@@ -10,6 +10,8 @@ SET(fsallustre_LIB_SRCS
    handle.c
    file.c
    xattrs.c
+   mds.c
+   ds.c
 )
 
 add_library(fsallustre SHARED ${fsallustre_LIB_SRCS})
