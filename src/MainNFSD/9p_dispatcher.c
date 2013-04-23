@@ -152,6 +152,9 @@ void * _9p_socket_thread( void * Arg )
   }
   atomic_store_uint32_t(&_9p_conn.refcount, 0);
 
+  /* Init the tags's locks */
+  for( i = 0; i < _9P_TAG_CONN ; i++ ) pthread_mutex_init( &_9p_conn.taglock[i], NULL ) ;
+
   /* Set initial msize. Client may request a lower value during TVERSION */
   _9p_conn.msize = _9P_MSG_SIZE;
 
