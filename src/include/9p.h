@@ -52,7 +52,8 @@ typedef uint64_t u64;
 
 #define _9P_LOCK_CLIENT_LEN 64
 
-#define _9P_FID_PER_CONN        1024
+#define _9P_FID_PER_CONN    1024
+#define _9P_TAG_CONN        64
 
 /* _9P_MSG_SIZE : maximum message size for 9P/TCP */
 #define _9P_MSG_SIZE 70000 
@@ -354,6 +355,7 @@ typedef struct _9p_conn__
   struct timeval  birth;  /* This is useful if same sockfd is reused on socket's close/open  */
   _9p_fid_t       fids[_9P_FID_PER_CONN] ;
   _9p_flush_bucket_t flush_buckets[FLUSH_BUCKETS];
+  pthread_mutex_t taglock[_9P_TAG_CONN] ;
   unsigned long sequence ;
   pthread_mutex_t sock_lock;
   unsigned int msize;
