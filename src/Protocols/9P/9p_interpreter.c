@@ -161,6 +161,7 @@ int _9p_process_buffer(  _9p_request_data_t * preq9p, nfs_worker_data_t * pworke
   char * msgdata ;
   u32 * pmsglen = NULL ;
   u8 * pmsgtype = NULL ;
+  u16 * pmsgtag = NULL ;
   int rc = 0;
 
   msgdata =  preq9p->_9pmsg;
@@ -173,11 +174,15 @@ int _9p_process_buffer(  _9p_request_data_t * preq9p, nfs_worker_data_t * pworke
   pmsgtype = (u8 *)msgdata ;
   msgdata += _9P_TYPE_SIZE ;
 
+  /* Get message's tag */
+  pmsgtag = (u16 *)msgdata ;
+
   /* Check boundaries */
   if( *pmsgtype < _9P_TSTATFS || *pmsgtype > _9P_TWSTAT )
    return -1 ;
 
-  LogFullDebug( COMPONENT_9P, "9P msg: length=%u type (%u|%s)",  *pmsglen, (u32)*pmsgtype, _9pfuncdesc[_9ptabindex[*pmsgtype]].funcname ) ;
+  LogFullDebug( COMPONENT_9P, "9P msg: length=%u type (%u|%s) tag=%lu",  
+                *pmsglen, (u32)*pmsgtype, _9pfuncdesc[_9ptabindex[*pmsgtype]].funcname, (u16)*pmsgtag ) ;
 
   /* Temporarily set outlen to maximum message size. This value will be used
    * inside the protocol functions for additional bound checking,
@@ -185,12 +190,22 @@ int _9p_process_buffer(  _9p_request_data_t * preq9p, nfs_worker_data_t * pworke
    */
   *poutlen = preq9p->pconn->msize;
 
+  /* We call call the service function within a locked section to avoid concurrency on tags */
+  /* This is not done for TVERSION which uses special tag 65535 */
+  if( *pmsgtype != _9P_TVERSION )
+         pthread_mutex_lock( &preq9p->pconn->taglock[*pmsgtag]) ;
+
   /* Call the 9P service function */  
   if( ( ( rc = _9pfuncdesc[_9ptabindex[*pmsgtype]].service_function( preq9p,
                                                                      (void *)pworker_data,
                                                                      poutlen, 
                                                                      replydata ) ) < 0 ) )
      LogDebug( COMPONENT_9P, "%s: Error", _9pfuncdesc[_9ptabindex[*pmsgtype]].funcname ) ;
+
+  /* Release the taglock */
+  if( *pmsgtype != _9P_TVERSION )
+         pthread_mutex_unlock( &preq9p->pconn->taglock[*pmsgtag]) ;
+
 
 /**
  * @todo ops stats accounting goes here.
