@@ -159,7 +159,7 @@ void * _9p_socket_thread( void * Arg )
   for( i = 0; i < _9P_TAG_CONN ; i++ ) pthread_mutex_init( &_9p_conn.taglock[i], NULL ) ;
 
   /* Set initial msize. Client may request a lower value during TVERSION */
-  _9p_conn.msize = _9P_MSG_SIZE;
+  _9p_conn.msize = nfs_param._9p_param._9p_tcp_msize ;
 
 
   if( gettimeofday( &_9p_conn.birth, NULL ) == -1 )
