@@ -148,6 +148,9 @@ void * _9p_rdma_thread( void * Arg )
   p_9p_conn->trans_type = _9P_RDMA ;
   p_9p_conn->trans_data.rdma_trans = trans ;
 
+  /* Init the fids pointers array */
+  memset( &_9p_conn.fids, 0, _9P_FID_PER_CONN* sizeof( _9p_fid_t * ) ) ;
+
   /* Init the tags's locks */
   for( i = 0; i < _9P_TAG_CONN ; i++ ) pthread_mutex_init( &_9p_conn.taglock[i], NULL ) ;
 

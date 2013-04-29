@@ -151,6 +151,9 @@ void * _9p_socket_thread( void * Arg )
           init_glist(&_9p_conn.flush_buckets[i].list);
   }
   atomic_store_uint32_t(&_9p_conn.refcount, 0);
+  
+  /* Init the fids pointers array */
+  memset( &_9p_conn.fids, 0, _9P_FID_PER_CONN* sizeof( _9p_fid_t * ) ) ;
 
   /* Init the tags's locks */
   for( i = 0; i < _9P_TAG_CONN ; i++ ) pthread_mutex_init( &_9p_conn.taglock[i], NULL ) ;
