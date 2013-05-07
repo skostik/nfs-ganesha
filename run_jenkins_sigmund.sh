@@ -4,6 +4,10 @@
 # To be set externally:
 # SERVERIP
 # SIGMUND
+#
+# A "runtype" is to be set on the command line as argument to this script.
+# Currently supported runtype are "nfs3" and "9p"
+#
 
 if [[ -z $SERVERIP || -z $SIGMUND ]] ; then
         echo "You must set SERVERIP and SIGMUND"
@@ -16,6 +20,22 @@ cd build
 ( cmake CCMAKE_BUILD_TYPE=Debug $BASE/src && make ) || exit 1
 cd ..
 
+RUNTYPE=$1
+
+if [[ -z $RUNTYPE ]] ; then
+	echo "No run type specified"
+fi
+
+if [[ $RUNTYPE = "nfs3" ]] ; then
+	MNTCMD="mount -o vers=3,lock"
+	BEHAVIOR=nfs
+elif [[ $RUNTYPE = "9p" ]] ; then
+	MNTCMD="mount -t 9P "
+	BEHAVIOR=9p
+else
+	echo "unsupported runtype : $RUNTYPE"
+	exit 1
+fi
 
 # Make sure no other ganesha than the one we want to test is running
 ssh $SERVERIP "pkill -9 ganesha.nfsd" 
@@ -34,10 +54,10 @@ echo "Wait 60 seconds. The server must quit grace period"
 sleep 60
 
 # mount Ganesha
-mount -o vers=3,lock $SERVERIP:/tmp /mnt || exit 1
+$MNTCMD $SERVERIP:/tmp /mnt || exit 1
 
 # Run sigmund test as root
-$SIGMUND nfs -j ./jenkins/sigmund_as_root.rc
+$SIGMUND $BEHAVIOR -j ./jenkins/sigmund_as_root.rc
 
 # cleanup
 umount /mnt
