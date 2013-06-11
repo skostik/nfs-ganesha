@@ -208,8 +208,7 @@ void destroy_fsals(void)
 					 m->name, rc);
 			}
 			LogEvent(COMPONENT_FSAL,
-				 "FSAL %s unloaded",
-				 m->name);
+				 "FSAL successfully unloaded" ) ;
 		}
 	}
 }
