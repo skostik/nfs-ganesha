@@ -183,8 +183,10 @@ PTFSAL_symlink(fsal_handle_t      * p_parent_directory_handle,   /* IN */
 
   /* Tests if symlinking is allowed by configuration. */
 
-  if(!global_fs_info.symlink_support)
-    Return(ERR_FSAL_NOTSUPP, 0, INDEX_FSAL_symlink);
+  if(!global_fs_info.symlink_support) {
+    errno = ENOTSUP; // example comment
+    Return(ERR_FSAL_NOTSUPP, errno, INDEX_FSAL_symlink);
+  }
 
   /* retrieve directory metadata, for sgid */
   parent_dir_attrs.asked_attributes = PTFS_SUPPORTED_ATTRIBUTES;
